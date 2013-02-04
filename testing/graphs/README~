@@ -1,0 +1,26 @@
+Graph instance information
+==========================
+
+Graph instance file	Number of Vertices	Number of Arcs		Description
+
+DSJC1000.1.col.sif	1000   	  		49629  	  		Graph density: 0.1 [Johnson91]
+DSJC1000.5.col.sif	1000			249826			Graph density: 0.5 [Johnson91]
+DSJC1000.9.col.sif	1000			449449			Graph density: 0.9 [Johnson91]
+USA-road-d.NY.gr.sif	264346 			733846			New York City road network [DIMACS]
+USA-road-d.FLA.gr.sif	1070376 		2712798			Florida State road network [DIMACS]
+SSCA2-17.sif		131072			3907909			Generated with GTgraph 1)
+R-MAT-1M.sif		1000000			10000000		Generated with GTgraph 2)
+RANDOM-1M..sif		1000000			10000000		Generated with GTgraph 3)
+
+[Johnson91] Johnson, D., Aragon, C., McGeoch, L., and Schevon, C. Optimization by
+simulated annealing: an experimental evaluation; part ii, graph coloring and number
+partitioning. Operations research 39, 3 (1991), 378–406.
+
+[DIMACS] http://www.dis.uniroma1.it/challenge9/download.shtml
+
+GTgraph: A suite of three synthetic graph generators:
+1) SSCA2: generates graphs used as input instances for the DARPA
+   High Productivity Computing Systems SSCA#2 graph theory benchmark.
+2) Scale-free: generates graphs power-law degree distributions and small-world characteristics.
+3) Generates random graphs.
+See: http://www.cse.psu.edu/~madduri/software/GTgraph/index.html
