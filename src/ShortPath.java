@@ -78,7 +78,7 @@ public class ShortPath {
      * Funcion que realiza una busqueda con DFS usando una cota.
      */
     private boolean DFS(Graph g, int i, int cota, String actual, String objetivo){
-        if(actual == objetivo) return true;
+        if(actual.equals(objetivo)){
         if(i >= cota) return false;
         Iterator<String> siguientes = g.adj(actual);
         while(siguientes.hasNext())
