@@ -20,16 +20,13 @@ package gdbb;
 
 import java.util.Iterator;
 
-/**
- *
- * @author josegregorio
- */
 public interface Graph {
-
+    
     public int V();
     public int E();
-    public void addEdge(Edge e);
-    public Iterator<String> adj(String v);
+    public void addNode(String nodeId);
+    public boolean addEdge(Edge e);
+    public Iterator<String> adj(String nodeId);
     public Iterator<Edge> getEdges ();
 
 }
