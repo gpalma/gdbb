@@ -33,7 +33,11 @@ public class DiGraphAdjList implements Graph {
     private ArrayList<Edge> edges;
     private HashMap<String, Integer> StoI;
     private ArrayList<String> ItoS;
-
+    
+    /*
+     * Constructor que genera un grafo dirigido, implementado con lista
+     * de adyacencias, totalmente vacio.
+     */
     public DiGraphAdjList() {
         this.V = 0;
         this.E = 0;
@@ -42,7 +46,13 @@ public class DiGraphAdjList implements Graph {
         this.edges = new ArrayList<Edge>();
         adj = (ArrayList<ArrayList<Integer>>) new ArrayList<ArrayList<Integer>>();
     }
-
+    
+    /*
+     * Constructor que genera un grafo dirigido, implementado con lista de
+     * adyacencias, basado en el archivo cuyo nombre es especificado como
+     * parametro de entrada (fileName). El grafo representado en el archivo
+     * debe estar en formato sif.
+     */
     public DiGraphAdjList(String fileName) {
         try {
             this.V = 0;
@@ -61,10 +71,7 @@ public class DiGraphAdjList implements Graph {
                 for (String i : line) {
                     if (pos == 0) {
                         if (!StoI.containsKey(i)) {
-                            StoI.put(i, V);
-                            ItoS.add(V, i);
-                            adj.add(V, new ArrayList<Integer>());
-                            V++;
+                            addNode(i);
                         }
                         cur = StoI.get(i);
                         curName = i;
@@ -74,10 +81,7 @@ public class DiGraphAdjList implements Graph {
                         pos = 2;
                     } else {
                         if (!StoI.containsKey(i)) {
-                            StoI.put(i, V);
-                            ItoS.add(V, i);
-                            adj.add(V, new ArrayList<Integer>());
-                            V++;
+                            addNode(i);
                         }
                         adj.get(cur).add(StoI.get(i));
                         edges.add(new Edge(edgeName, curName, i));
@@ -90,43 +94,69 @@ public class DiGraphAdjList implements Graph {
             e.printStackTrace();
         }
     }
-
-    public int V() {
+    
+    /*
+     * Funcion que retorna la cantidad de nodos que posee el grafo.
+     */
+    public int V() {  
         return V;
     }
-
+    
+    /*
+     * Funcion que retorna la cantidad de arcos que posee el grafo.
+     */
     public int E() {
         return E;
     }
-
-    public void addEdge(Edge e) {
-        if (!StoI.containsKey(e.getSrc())) {
-            StoI.put(e.getSrc(), V);
-            ItoS.add(V, e.getSrc());
+    
+    /*
+     * Funcion que agrega un nodo con el id pasado como parametro de
+     * entrada (nodeId) en caso de que no se encuentre ya en el grafo.
+     */
+    public void addNode(String nodeId) {
+        if ((!StoI.containsKey(nodeId))) {
+            StoI.put(nodeId, V);
+            ItoS.add(V, nodeId);
             adj.add(V, new ArrayList<Integer>());
             V++;
         }
-        if (!StoI.containsKey(e.getDst())) {
-            StoI.put(e.getDst(), V);
-            ItoS.add(V, e.getDst());
-            adj.add(V, new ArrayList<Integer>());
-            V++;
+    }
+    
+    /*
+     * Funcion que agrega un arco nuevo al grafo en caso de que ambos nodos
+     * especificados en dicho arco existan en el grafo. En caso contrario 
+     * retorna false.
+     */
+    public boolean addEdge(Edge e) {
+        if (!StoI.containsKey(e.getSrc()) || !StoI.containsKey(e.getDst())) {
+            return false;
         }
         adj.get(StoI.get(e.getSrc())).add(StoI.get(e.getDst()));
         E++;
+        return true;
     }
-
-    public Iterator<String> adj(String v) {
+    
+    /*
+     * Funcion que retorna un iterador sobre todos los nodos adyacentes
+     * al nodo especificado como parametro de entrada (nodeId). En caso
+     * de que el nodo no se encuentre en el grafo o que no tenga otros
+     * nodos adyacentes, se devuelve un iterador de una lista vacia.
+     */
+    public Iterator<String> adj(String nodeId) {
         ArrayList<String> adjlist = new ArrayList<String>();
-        if (StoI.containsKey(v)) {
-            for (Integer i : adj.get(StoI.get(v)))
+        if (StoI.containsKey(nodeId)) {
+            for (Integer i : adj.get(StoI.get(nodeId)))
                 adjlist.add(ItoS.get(i));
         }
         return adjlist.iterator();
     }
-
+    
+    /*
+     * Funcion que retorna un iterador sobre todos los arcos contenidos
+     * en el grafo.
+     */
     public Iterator<Edge> getEdges () {
         return edges.iterator();
     }
-
+    
 }
