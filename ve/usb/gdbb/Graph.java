@@ -16,26 +16,17 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package gdbb;
-import java.util.ArrayList;
+package ve.usb.gdbb;
+
 import java.util.Iterator;
-public class kneighborhood {
-    /*
-     * Constructor de la clase
-     */
-    public kneighborhood(){
-    }
-    
-    /*
-     * Funcion que devuelve los k vecinos de un nodo v1.
-     */
-    public ArrayList<String> getNeighborhood(Graph g, String v1) {
-        ArrayList<String> res = new ArrayList<String>();
-        Iterator<String> siguientes = g.adj(v1);
-        while(siguientes.hasNext()){
-            res.add(siguientes.next());
-        }
-        return res;
-    }
-    
+
+public interface Graph {
+
+    public int V();
+    public int E();
+    public void addNode(String nodeId);
+    public boolean addEdge(Edge e);
+    public Iterator<String> adj(String nodeId);
+    public Iterator<Edge> getEdges ();
+
 }

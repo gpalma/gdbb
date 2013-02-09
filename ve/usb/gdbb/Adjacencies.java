@@ -16,12 +16,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package gdbb;
+package ve.usb.gdbb;
 
 import java.util.Iterator;
 
 public class Adjacencies {
-    
+
     public Adjacencies() {
     }
     /*
@@ -50,7 +50,7 @@ public class Adjacencies {
         }
         return false;
     }
-    
+
     /*
      * Funcion que dado un grafo y dos id (en String) de arcos,
      * devuelve un booleano indicando si dichos arcos son adyacentes.
@@ -79,7 +79,7 @@ public class Adjacencies {
         }
         return adj;
     }
-    
+
     /*
      * Funcion que dado un grafo y dos arcos (Edges),
      * devuelve un booleano indicando si dichos arcos son adyacentes.

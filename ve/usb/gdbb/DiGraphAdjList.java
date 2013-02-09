@@ -16,7 +16,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package gdbb;
+package ve.usb.gdbb;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -33,7 +33,7 @@ public class DiGraphAdjList implements Graph {
     private ArrayList<Edge> edges;
     private HashMap<String, Integer> StoI;
     private ArrayList<String> ItoS;
-    
+
     /*
      * Constructor que genera un grafo dirigido, implementado con lista
      * de adyacencias, totalmente vacio.
@@ -46,7 +46,7 @@ public class DiGraphAdjList implements Graph {
         this.edges = new ArrayList<Edge>();
         adj = (ArrayList<ArrayList<Integer>>) new ArrayList<ArrayList<Integer>>();
     }
-    
+
     /*
      * Constructor que genera un grafo dirigido, implementado con lista de
      * adyacencias, basado en el archivo cuyo nombre es especificado como
@@ -94,21 +94,21 @@ public class DiGraphAdjList implements Graph {
             e.printStackTrace();
         }
     }
-    
+
     /*
      * Funcion que retorna la cantidad de nodos que posee el grafo.
      */
-    public int V() {  
+    public int V() {
         return V;
     }
-    
+
     /*
      * Funcion que retorna la cantidad de arcos que posee el grafo.
      */
     public int E() {
         return E;
     }
-    
+
     /*
      * Funcion que agrega un nodo con el id pasado como parametro de
      * entrada (nodeId) en caso de que no se encuentre ya en el grafo.
@@ -121,10 +121,10 @@ public class DiGraphAdjList implements Graph {
             V++;
         }
     }
-    
+
     /*
      * Funcion que agrega un arco nuevo al grafo en caso de que ambos nodos
-     * especificados en dicho arco existan en el grafo. En caso contrario 
+     * especificados en dicho arco existan en el grafo. En caso contrario
      * retorna false.
      */
     public boolean addEdge(Edge e) {
@@ -135,7 +135,7 @@ public class DiGraphAdjList implements Graph {
         E++;
         return true;
     }
-    
+
     /*
      * Funcion que retorna un iterador sobre todos los nodos adyacentes
      * al nodo especificado como parametro de entrada (nodeId). En caso
@@ -150,7 +150,7 @@ public class DiGraphAdjList implements Graph {
         }
         return adjlist.iterator();
     }
-    
+
     /*
      * Funcion que retorna un iterador sobre todos los arcos contenidos
      * en el grafo.
@@ -158,5 +158,5 @@ public class DiGraphAdjList implements Graph {
     public Iterator<Edge> getEdges () {
         return edges.iterator();
     }
-    
+
 }

@@ -17,7 +17,8 @@
  */
 
 package testgdbb;
-import gdbb.*;
+
+import ve.usb.gdbb.*;
 import java.util.Random;
 
 /*
@@ -36,7 +37,7 @@ public abstract class Test{
     };
     protected Graph graphTest; // Grafo de prueba
     protected Random r; // Use random for get nodes or edges
-    
+
     /*
      * Funcion que crea un grafo a partir de una opcion de grafo
      * y el indice del arreglo de nombres de archivos
@@ -58,28 +59,28 @@ public abstract class Test{
         }
         return false;
     }
-    
+
     /*
      * Devuelve el proximo numero pseudoaleatorio dentro del rango [0..n]
      */
     protected int nextRandom(int n){
         return r.nextInt(n);
     }
-    
+
     /*
      * Funcion que devuelve la cantidad de archivos de prueba
      */
     public int getFilesLenght(){
         return TestFiles.length;
     }
-    
+
     /*
      * Funcion que dado un grafo genera un caso de prueba para el grafo
      * Se debe utilizar "r" para generar los nodos o arcos de manera aleatoria
      * pues se usa una semilla estandar para todos.
      */
     protected abstract void testGraph();
-    
+
     /*
      * Funcion que ejecuta el test dada una opcion de grafo
      */

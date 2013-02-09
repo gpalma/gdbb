@@ -16,41 +16,28 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package gdbb;
+package ve.usb.gdbb;
 
-public class Edge {
-    private String id;
-    private String src;
-    private String dst;
+import java.util.ArrayList;
+import java.util.Iterator;
 
-    public Edge(String id, String src, String dst) {
-        this.id = id;
-        this.src = src;
-        this.dst = dst;
+public class kneighborhood {
+    /*
+     * Constructor de la clase
+     */
+    public kneighborhood(){
     }
 
-    public String getDst() {
-        return dst;
-    }
-
-    public void setDst(String dst) {
-        this.dst = dst;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getSrc() {
-        return src;
-    }
-
-    public void setSrc(String src) {
-        this.src = src;
+    /*
+     * Funcion que devuelve los k vecinos de un nodo v1.
+     */
+    public ArrayList<String> getNeighborhood(Graph g, String v1) {
+        ArrayList<String> res = new ArrayList<String>();
+        Iterator<String> siguientes = g.adj(v1);
+        while(siguientes.hasNext()){
+            res.add(siguientes.next());
+        }
+        return res;
     }
 
 }
