@@ -18,36 +18,40 @@
 
 package testgdbb;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.*;
 import ve.usb.gdbb.*;
-import java.util.Random;
 
 /*
  * Clase abstracta Test
  */
 public abstract class Test{
-    protected String[] TestFiles = {
-        "graphs/DSJC1000.1.col.sif",
-        "graphs/DSJC1000.5.col.sif",
-        "graphs/DSJC1000.9.col.sif",
-        "graphs/USA-road-d.NY.gr.sif",
-        "graphs/USA-road-d.FLA.gr.sif",
-        "graphs/SSCA2-17.sif",
-        "graphs/R-MAT-1M.sif",
-        "graphs/RANDOM-1M.sif"
+    static protected String[] TestFiles = {
+        "testgdbb/graphs/DSJC1000.1.col.sif",
+        "testgdbb/graphs/DSJC1000.5.col.sif",
+        "testgdbb/graphs/DSJC1000.9.col.sif",
+        "testgdbb/graphs/USA-road-d.NY.gr.sif",
+        "testgdbb/graphs/USA-road-d.FLA.gr.sif",
+        "testgdbb/graphs/SSCA2-17.sif",
+        "testgdbb/graphs/R-MAT-1M.sif",
+        "testgdbb/graphs/RANDOM-1M.sif"
     };
     protected Graph graphTest; // Grafo de prueba
-    protected Random r; // Use random for get nodes or edges
-
+    protected Random r; // 
+    protected int graphPosition; //
+    
     /*
      * Funcion que crea un grafo a partir de una opcion de grafo
      * y el indice del arreglo de nombres de archivos
      * Devuelve true si logro crear el grafo
      */
     protected boolean createGraph(int option, int posGraph){
-        if(0 > posGraph || posgraph > TestFiles.length){
+        if(0 > posGraph || posGraph > TestFiles.length){
             System.err.print("Invalid position of TestFile array\n");
             return false;
         }
+        graphPosition = posGraph;
         if(option == 0){
             graphTest = null;
             graphTest = new DiGraphAdjList(TestFiles[posGraph]);
@@ -59,7 +63,58 @@ public abstract class Test{
         }
         return false;
     }
-
+    
+    /*
+     * Funcion que devuelve un arreglo de strings con tantos nodos como amount
+     * escogidos de forma aleatoria.
+     */
+    protected String[] nextRandomNode(int amount){
+        int[] randomNodesPos = new int[amount];
+        String[] randomNodes = new String[amount];
+        ArrayList<String> ItoS = new ArrayList<String>();
+        HashMap<String, Integer> StoI = new HashMap<String, Integer>();
+        for (int i = 0; i < amount; i++) {
+            randomNodesPos[i] = nextRandom(graphTest.V());
+        }
+        Arrays.sort(randomNodesPos);
+        try {
+            File file = new File(TestFiles[graphPosition]);
+            Scanner scanner = new Scanner(file);
+            int pos, cur = 0, readed = 0;
+            while (scanner.hasNextLine() && cur < amount) {
+                pos = 0;
+                String[] line = scanner.nextLine().split("\t");
+                for (String i : line) {
+                    if (pos == 0) {
+                        if (!StoI.containsKey(i)) {
+                            StoI.put(i, readed); //OJO
+                            ItoS.add(readed, i); //OJO
+                            readed++;
+                        }
+                        pos = 1;
+                    } else if (pos == 1) {
+                        pos = 2;
+                    } else {
+                        if (!StoI.containsKey(i)) {
+                            StoI.put(i, readed); //OJO
+                            ItoS.add(readed, i); //OJO
+                            readed++;
+                        }
+                    }
+                }
+                while (cur < amount && readed > randomNodesPos[cur]) {
+                    randomNodes[cur] = ItoS.get(randomNodesPos[cur]);
+                    cur++;
+                }
+            }
+            scanner.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return randomNodes;
+    }
+    
+    
     /*
      * Devuelve el proximo numero pseudoaleatorio dentro del rango [0..n]
      */
