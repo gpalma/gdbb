@@ -26,7 +26,7 @@ public class TestAdjacencies extends Test {
     public TestAdjacencies() {
     }
     
-    protected void testGraph() {
+    protected boolean testGraph() {
         String[] randomNodes = nextRandomNode(2);
         Adjacencies tests = new Adjacencies();
         boolean areAdj;
@@ -38,6 +38,7 @@ public class TestAdjacencies extends Test {
                 new Edge("", randomNodes[2], randomNodes[3]));
         System.out.println("Edges (" + randomNodes[0] + ", " + randomNodes[1] + ") and (" + 
                 randomNodes[2] + ", " + randomNodes[3] + ") are " + (areAdj? "": "not ") + "adjacents.");
+        return true;
     }
     
     public static void main(String[] args) {
