@@ -48,6 +48,5 @@ public class TestAdjacencies extends Test {
         System.out.println("0- DiGraphAdjList");
         opt = console.nextInt();
         testing.test(opt);
-        System.out.println("Lo logre");
     }
 }
