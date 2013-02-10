@@ -21,7 +21,7 @@ package ve.usb.gdbb;
 import java.util.Iterator;
 
 public class Adjacencies {
-
+    
     public Adjacencies() {
     }
     /*
@@ -52,35 +52,6 @@ public class Adjacencies {
     }
 
     /*
-     * Funcion que dado un grafo y dos id (en String) de arcos,
-     * devuelve un booleano indicando si dichos arcos son adyacentes.
-     * Dos arcos son adyacentes si comparten un nodo, bien sea fuente
-     * o destino.
-     */
-    public boolean adjEdgesById(Graph g, String edgeId1, String edgeId2) {
-        if (edgeId1.compareTo(edgeId2) == 0) return true;
-        Iterator<Edge> edgesIt1 = g.getEdges(), edgesIt2;
-        Edge edge1 = null, edge2 = null;
-        boolean adj = false;
-        while (edgesIt1.hasNext() && !adj) {
-            edge1 = edgesIt1.next();
-            if (edge1.getId().compareTo(edgeId1) == 0) {
-                edgesIt2 = g.getEdges();
-                while (edgesIt2.hasNext() && !adj) {
-                    edge2 = edgesIt2.next();
-                    if (edge2.getId().compareTo(edgeId2) == 0) {
-                        adj = (edge1.getSrc().compareTo(edge2.getDst()) == 0
-                        || edge1.getDst().compareTo(edge2.getSrc()) == 0
-                        || edge1.getSrc().compareTo(edge2.getSrc()) == 0
-                        || edge1.getDst().compareTo(edge2.getDst()) == 0);
-                    }
-                }
-            }
-        }
-        return adj;
-    }
-
-    /*
      * Funcion que dado un grafo y dos arcos (Edges),
      * devuelve un booleano indicando si dichos arcos son adyacentes.
      * Dos arcos son adyacentes si comparten un nodo, bien sea fuente
@@ -92,4 +63,5 @@ public class Adjacencies {
                     || edge1.getSrc().compareTo(edge2.getSrc()) == 0
                     || edge1.getDst().compareTo(edge2.getDst()) == 0);
     }
+    
 }
