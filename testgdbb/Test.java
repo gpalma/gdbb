@@ -134,7 +134,7 @@ public abstract class Test{
      * Se debe utilizar "r" para generar los nodos o arcos de manera aleatoria
      * pues se usa una semilla estandar para todos.
      */
-    protected abstract void testGraph();
+    protected abstract boolean testGraph();
 
     /*
      * Funcion que ejecuta el test dada una opcion de grafo
@@ -142,7 +142,7 @@ public abstract class Test{
     public boolean test(int option){
         for(int i = 0; i < getFilesLenght(); i++){
             if(!this.createGraph(option, i)) return false;
-            this.testGraph();
+            if(!this.testGraph()) return false;
         }
         return true;
     }
