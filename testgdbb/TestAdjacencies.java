@@ -18,7 +18,7 @@
 
 package testgdbb;
 
-import gdbb.*;
+import ve.usb.gdbb.*;
 import java.util.Scanner;
 
 public class TestAdjacencies extends Test {
