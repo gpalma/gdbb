@@ -26,7 +26,7 @@ import java.lang.Math;
  */
 public class TestReachability extends Test {
 
-  String[] newV;
+  	String[] newV;
 	BFS bfsTest;
 	DFS dfsTest;
 
@@ -54,7 +54,7 @@ public class TestReachability extends Test {
 		return checkDFS(b,middle) && checkDFS(middle,e);
 	}
 
-    protected boolean testGraph() {
+	protected boolean testGraph() {
 		int N = (int)Math.ceil(3.0 * (double)this.graphTest.V() / 4.0);
 		newV = this.nextRandomNode(N);
 		bfsTest = new BFS(this.graphTest);
