@@ -16,22 +16,21 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package ve.usb.gdbb;
+package gdbb;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-
 public class ShortPath {
-
+    
     /*
      * Constructor de la clase
      */
     public ShortPath(){
     }
-
+    
     /*
-     * Funcion que devuelve el camino mas corto desde v1 hasta v2 en
-     * un arraylist que muestra los nodos intermedios partiendo desde v1
+     * Funcion que devuelve el camino mas corto desde v1 hasta v2 en 
+     * un arraylist que muestra los nodos intermedios partiendo desde v1 
      * hasta v2.
      * Retorna NULL en caso de no encontrar camino.
      */
@@ -47,9 +46,9 @@ public class ShortPath {
     /*
      * Funcion que realiza una busqueda con DFS usando una cota.
      */
-    private boolean DFScamino(Graph g, int i, int cota, String actual,
+    private boolean DFScamino(Graph g, int i, int cota, String actual, 
                               String objetivo, ArrayList<String> res){
-        if(actual.equals(objetivo)){
+        if(actual.equals(objetivo)){ 
             res.add(i, actual);
             return true;
         }
@@ -63,8 +62,8 @@ public class ShortPath {
         }
         return false;
     }
-
-
+    
+    
     /*
      * Funcion que devuelve la distancia mas corta entre dos nodos v1 y v2.
      * Si no encuentra camino retorna -1.
@@ -89,6 +88,6 @@ public class ShortPath {
                 return true;
         return false;
     }
-
-
+    
+    
 }
