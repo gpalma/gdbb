@@ -16,134 +16,28 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package testgdbb;
+package ve.usb.gdbb;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.*;
-import ve.usb.gdbb.*;
+import java.util.ArrayList;
+import java.util.Iterator;
 
-/*
- * Clase abstracta Test
- */
-public abstract class Test{
-    static protected String[] TestFiles = {
-        "testgdbb/graphs/DSJC1000.1.col.sif",
-        "testgdbb/graphs/DSJC1000.5.col.sif",
-        "testgdbb/graphs/DSJC1000.9.col.sif",
-        "testgdbb/graphs/USA-road-d.NY.gr.sif",
-        "testgdbb/graphs/USA-road-d.FLA.gr.sif",
-        "testgdbb/graphs/SSCA2-17.sif",
-        "testgdbb/graphs/R-MAT-1M.sif",
-        "testgdbb/graphs/RANDOM-1M.sif"
-    };
-    protected Graph graphTest; // Grafo de prueba
-    protected Random r; // 
-    protected int graphPosition; //
-    
+public class Kneighborhood {
     /*
-     * Funcion que crea un grafo a partir de una opcion de grafo
-     * y el indice del arreglo de nombres de archivos
-     * Devuelve true si logro crear el grafo
+     * Constructor de la clase
      */
-    protected boolean createGraph(int option, int posGraph){
-        if(0 > posGraph || posGraph > TestFiles.length){
-            System.err.print("Invalid position of TestFile array\n");
-            return false;
-        }
-        graphPosition = posGraph;
-        if(option == 0){
-            graphTest = null;
-            graphTest = new DiGraphAdjList(TestFiles[posGraph]);
-            r = null;
-            r = new Random(posGraph);
-            return true;
-        }else{
-            System.err.print("Dont exist a Graph for this option\n");
-        }
-        return false;
-    }
-    
-    /*
-     * Funcion que devuelve un arreglo de strings con tantos nodos como amount
-     * escogidos de forma aleatoria.
-     */
-    protected String[] nextRandomNode(int amount){
-        int[] randomNodesPos = new int[amount];
-        String[] randomNodes = new String[amount];
-        ArrayList<String> ItoS = new ArrayList<String>();
-        HashMap<String, Integer> StoI = new HashMap<String, Integer>();
-        for (int i = 0; i < amount; i++) {
-            randomNodesPos[i] = nextRandom(graphTest.V());
-        }
-        Arrays.sort(randomNodesPos);
-        try {
-            File file = new File(TestFiles[graphPosition]);
-            Scanner scanner = new Scanner(file);
-            int pos, cur = 0, readed = 0;
-            while (scanner.hasNextLine() && cur < amount) {
-                pos = 0;
-                String[] line = scanner.nextLine().split("\t");
-                for (String i : line) {
-                    if (pos == 0) {
-                        if (!StoI.containsKey(i)) {
-                            StoI.put(i, readed); //OJO
-                            ItoS.add(readed, i); //OJO
-                            readed++;
-                        }
-                        pos = 1;
-                    } else if (pos == 1) {
-                        pos = 2;
-                    } else {
-                        if (!StoI.containsKey(i)) {
-                            StoI.put(i, readed); //OJO
-                            ItoS.add(readed, i); //OJO
-                            readed++;
-                        }
-                    }
-                }
-                while (cur < amount && readed > randomNodesPos[cur]) {
-                    randomNodes[cur] = ItoS.get(randomNodesPos[cur]);
-                    cur++;
-                }
-            }
-            scanner.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        return randomNodes;
-    }
-    
-    
-    /*
-     * Devuelve el proximo numero pseudoaleatorio dentro del rango [0..n]
-     */
-    protected int nextRandom(int n){
-        return r.nextInt(n);
+    public kneighborhood(){
     }
 
     /*
-     * Funcion que devuelve la cantidad de archivos de prueba
+     * Funcion que devuelve los k vecinos de un nodo v1.
      */
-    public int getFilesLenght(){
-        return TestFiles.length;
-    }
-
-    /*
-     * Funcion que dado un grafo genera un caso de prueba para el grafo
-     * Se debe utilizar "r" para generar los nodos o arcos de manera aleatoria
-     * pues se usa una semilla estandar para todos.
-     */
-    protected abstract boolean testGraph();
-
-    /*
-     * Funcion que ejecuta el test dada una opcion de grafo
-     */
-    public boolean test(int option){
-        for(int i = 0; i < getFilesLenght(); i++){
-            if(!this.createGraph(option, i)) return false;
-            if(!this.testGraph()) return false;
+    public ArrayList<String> getNeighborhood(Graph g, String v1) {
+        ArrayList<String> res = new ArrayList<String>();
+        Iterator<String> siguientes = g.adj(v1);
+        while(siguientes.hasNext()){
+            res.add(siguientes.next());
         }
-        return true;
+        return res;
     }
+
 }
