@@ -33,7 +33,7 @@ public class TestReachability extends Test {
 
 	protected boolean checkBFS(int b, int e) {
 		boolean res = true;
-		for (int i=0 ; i<N-3 && res ; i++) {
+		for (int i=0 ; i<N-2 && res ; i++) {
 			if (bfsTest.existsPath(newV[i], newV[i+1])
 				&& bfsTest.existsPath(newV[i+1], newV[i+2]))
 				res = bfsTest.existsPath(newV[i], newV[i+2]);
@@ -43,7 +43,7 @@ public class TestReachability extends Test {
 
 	protected boolean checkDFS() {
 		boolean res = true;
-		for (int i=0 ; i<N-3 && res ; i++) {
+		for (int i=0 ; i<N-2 && res ; i++) {
 			if (dfsTest.existsPath(newV[i], newV[i+1])
 				&& dfsTest.existsPath(newV[i+1], newV[i+2]))
 				res = dfsTest.existsPath(newV[i], newV[i+2]);
