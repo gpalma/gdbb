@@ -27,39 +27,40 @@ import java.lang.Math;
 public class TestReachability extends Test {
 
   	String[] newV;
+  	int N;
 	BFS bfsTest;
 	DFS dfsTest;
 
 	protected boolean checkBFS(int b, int e) {
-		if (Math.abs(b-e)<2)
-			return true;
-		int middle = (b+e)/2;
-		boolean totalReach = bfsTest.existsPath(newV[b], newV[e]),
-				part1Reach = bfsTest.existsPath(newV[b], newV[middle]),
-				part2Reach = bfsTest.existsPath(newV[middle], newV[e]);
-		if (totalReach != part1Reach && part2Reach)
-			return false;
-		return checkBFS(b,middle) && checkBFS(middle,e);
+		boolean res = true;
+		for (int i=0 ; i<N-3 && res ; i++) {
+			if (bfsTest.existsPath(newV[i], newV[i+1])
+				&& bfsTest.existsPath(newV[i+1], newV[i+2]))
+				res = bfsTest.existsPath(newV[i], newV[i+2]);
+		}
+		return res;
 	}
 
-	protected boolean checkDFS(int b, int e) {
-		if (Math.abs(b-e)<2)
-			return true;
-		int middle = (b+e)/2;
-		boolean totalReach = dfsTest.existsPath(newV[b], newV[e]),
-				part1Reach = dfsTest.existsPath(newV[b], newV[middle]),
-				part2Reach = dfsTest.existsPath(newV[middle], newV[e]);
-		if (totalReach != part1Reach && part2Reach)
-			return false;
-		return checkDFS(b,middle) && checkDFS(middle,e);
+	protected boolean checkDFS() {
+		boolean res = true;
+		for (int i=0 ; i<N-3 && res ; i++) {
+			if (dfsTest.existsPath(newV[i], newV[i+1])
+				&& dfsTest.existsPath(newV[i+1], newV[i+2]))
+				res = dfsTest.existsPath(newV[i], newV[i+2]);
+		}
+		return res;
 	}
 
 	protected boolean testGraph() {
-		int N = (int)Math.ceil(3.0 * (double)this.graphTest.V() / 4.0);
+		if (this.graphTest.V() < 3) {
+			System.out.println("The size of the graph must be greater.");
+			return false;
+		}
+		N = 3 * (int)Math.ceil((double)this.graphTest.V() / 6.0);
 		newV = this.nextRandomNode(N);
 		bfsTest = new BFS(this.graphTest);
 		dfsTest = new DFS(this.graphTest);
 
-		return this.checkBFS(0,N-1) && this.checkDFS(0,N-1);
+		return this.checkBFS() && this.checkDFS();
 	}
 }
