@@ -33,7 +33,8 @@ public class DiGraphAdjList implements Graph {
     private ArrayList<Edge> edges;
     private HashMap<String, Integer> StoI;
     private ArrayList<String> ItoS;
-
+    private ArrayList<Integer> inDegree, outDegree;
+    
     /*
      * Constructor que genera un grafo dirigido, implementado con lista
      * de adyacencias, totalmente vacio.
@@ -44,9 +45,11 @@ public class DiGraphAdjList implements Graph {
         this.StoI = new HashMap<String, Integer>();
         this.ItoS = new ArrayList<String>();
         this.edges = new ArrayList<Edge>();
+        this.inDegree = new ArrayList<Integer>();
+        this.outDegree = new ArrayList<Integer>();
         adj = (ArrayList<ArrayList<Integer>>) new ArrayList<ArrayList<Integer>>();
     }
-
+    
     /*
      * Constructor que genera un grafo dirigido, implementado con lista de
      * adyacencias, basado en el archivo cuyo nombre es especificado como
@@ -60,19 +63,19 @@ public class DiGraphAdjList implements Graph {
             this.StoI = new HashMap<String, Integer>();
             this.ItoS = new ArrayList<String>();
             this.edges = new ArrayList<Edge>();
+            this.inDegree = new ArrayList<Integer>();
+            this.outDegree = new ArrayList<Integer>();
             adj = (ArrayList<ArrayList<Integer>>) new ArrayList<ArrayList<Integer>>();
             File file = new File(fileName);
             Scanner scanner = new Scanner(file);
-            int pos, cur = 0;
+            int pos, cur = 0, curSuc;
             String edgeName = "", curName = "";
             while (scanner.hasNextLine()) {
                 pos = 0;
                 String[] line = scanner.nextLine().split("\t");
                 for (String i : line) {
                     if (pos == 0) {
-                        if (!StoI.containsKey(i)) {
-                            addNode(i);
-                        }
+                        addNode(i);
                         cur = StoI.get(i);
                         curName = i;
                         pos = 1;
@@ -80,11 +83,12 @@ public class DiGraphAdjList implements Graph {
                         edgeName = i;
                         pos = 2;
                     } else {
-                        if (!StoI.containsKey(i)) {
-                            addNode(i);
-                        }
-                        adj.get(cur).add(StoI.get(i));
+                        addNode(i);
+                        curSuc = StoI.get(i);
+                        adj.get(cur).add(curSuc);
                         edges.add(new Edge(edgeName, curName, i));
+                        outDegree.set(cur, outDegree.get(cur) + 1);
+                        inDegree.set(curSuc, inDegree.get(curSuc) + 1);
                         E++;
                     }
                 }
@@ -94,21 +98,21 @@ public class DiGraphAdjList implements Graph {
             e.printStackTrace();
         }
     }
-
+    
     /*
      * Funcion que retorna la cantidad de nodos que posee el grafo.
      */
-    public int V() {
+    public int V() {  
         return V;
     }
-
+    
     /*
      * Funcion que retorna la cantidad de arcos que posee el grafo.
      */
     public int E() {
         return E;
     }
-
+    
     /*
      * Funcion que agrega un nodo con el id pasado como parametro de
      * entrada (nodeId) en caso de que no se encuentre ya en el grafo.
@@ -119,12 +123,14 @@ public class DiGraphAdjList implements Graph {
             ItoS.add(V, nodeId);
             adj.add(V, new ArrayList<Integer>());
             V++;
+            inDegree.add(0);
+            outDegree.add(0);
         }
     }
-
+    
     /*
      * Funcion que agrega un arco nuevo al grafo en caso de que ambos nodos
-     * especificados en dicho arco existan en el grafo. En caso contrario
+     * especificados en dicho arco existan en el grafo. En caso contrario 
      * retorna false.
      */
     public boolean addEdge(Edge e) {
@@ -135,7 +141,7 @@ public class DiGraphAdjList implements Graph {
         E++;
         return true;
     }
-
+    
     /*
      * Funcion que retorna un iterador sobre todos los nodos adyacentes
      * al nodo especificado como parametro de entrada (nodeId). En caso
@@ -150,7 +156,7 @@ public class DiGraphAdjList implements Graph {
         }
         return adjlist.iterator();
     }
-
+    
     /*
      * Funcion que retorna un iterador sobre todos los arcos contenidos
      * en el grafo.
@@ -160,12 +166,26 @@ public class DiGraphAdjList implements Graph {
     }
     
     /*
-     * Funcion que retorna un iterador sobre todos los nodos contenidos
-     * en el grafo.
+     * Funcion que retorna un iterador sobre todos los nodos que contiene
+     * el grafo.
      */
     public Iterator<String> getNodes () {
         return ItoS.iterator();
     }
     
+    /*
+     * Funcion que retorna un iterador sobre un arreglo que contiene los
+     * grados de entrada de cada nodo en orden de aparicion en el grafo.
+     */
+    public Iterator<Integer> getInDegree() {
+        return inDegree.iterator();
+    }
     
+    /*
+     * Funcion que retorna un iterador sobre un arreglo que contiene los
+     * grados de salida de cada nodo en orden de aparicion en el grafo.
+     */
+    public Iterator<Integer> getOutDegree() {
+        return outDegree.iterator();
+    }
 }
