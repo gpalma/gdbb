@@ -21,10 +21,6 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.*;
 
-/**
- *
- * @author josegregorio
- */
 public class DensestSubgraph {
     
     private ArrayList<Integer> inDegrees;
