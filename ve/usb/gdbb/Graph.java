@@ -21,12 +21,15 @@ package ve.usb.gdbb;
 import java.util.Iterator;
 
 public interface Graph {
-
+    
     public int V();
     public int E();
     public void addNode(String nodeId);
     public boolean addEdge(Edge e);
     public Iterator<String> adj(String nodeId);
     public Iterator<Edge> getEdges ();
-    public Iterator<String> getNodes();
+    public Iterator<String> getNodes ();
+    public Iterator<Integer> getInDegree ();
+    public Iterator<Integer> getOutDegree ();
+
 }
