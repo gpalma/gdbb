@@ -28,5 +28,5 @@ public interface Graph {
     public boolean addEdge(Edge e);
     public Iterator<String> adj(String nodeId);
     public Iterator<Edge> getEdges ();
-
+    public Iterator<String> getNodes();
 }
