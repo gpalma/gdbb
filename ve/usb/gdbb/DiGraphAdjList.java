@@ -158,5 +158,14 @@ public class DiGraphAdjList implements Graph {
     public Iterator<Edge> getEdges () {
         return edges.iterator();
     }
-
+    
+    /*
+     * Funcion que retorna un iterador sobre todos los nodos contenidos
+     * en el grafo.
+     */
+    public Iterator<String> getNodes () {
+        return ItoS.iterator();
+    }
+    
+    
 }
