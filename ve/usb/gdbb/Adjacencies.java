@@ -50,6 +50,24 @@ public class Adjacencies {
         }
         return false;
     }
+    
+    /*
+     * Funcion que dado un Grafo y un id (en String) de dos nodos
+     * devuelve un booleano indicando si dichos nodos son o no
+     * adyacentes.En este caso, dos nodos son adyacentes si solo si
+     * existe un arcos que vaya desde node1 a node2.
+     */
+    public boolean adjNodesRestricted(Graph g, String node1, String node2) {
+        Iterator<String> adjacents = g.adj(node1);
+        String cur;
+        while (adjacents.hasNext()) {
+            cur = adjacents.next();
+            if (cur.compareTo(node2) == 0) {
+                return true;
+            }
+        }
+       	return false;
+    }
 
     /*
      * Funcion que dado un grafo y dos arcos (Edges),
