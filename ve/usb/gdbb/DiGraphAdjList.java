@@ -85,8 +85,7 @@ public class DiGraphAdjList implements Graph {
                     } else {
                         addNode(i);
                         curSuc = StoI.get(i);
-                        adj.get(cur).add(curSuc);
-                        edges.add(new Edge(edgeName, curName, i));
+                        addEdge(new Edge(edgeName, curName, i));
                         outDegree.set(cur, outDegree.get(cur) + 1);
                         inDegree.set(curSuc, inDegree.get(curSuc) + 1);
                         E++;
@@ -138,6 +137,7 @@ public class DiGraphAdjList implements Graph {
             return false;
         }
         adj.get(StoI.get(e.getSrc())).add(StoI.get(e.getDst()));
+        edges.add(e);
         E++;
         return true;
     }
