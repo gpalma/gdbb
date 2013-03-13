@@ -79,7 +79,7 @@ public class ShortPath {
      */
     private boolean DFS(Graph g, int i, int cota, String actual, String objetivo){
         if(actual.equals(objetivo)){
-            return 0;
+            return true;
         }
         if(i >= cota) return false;
         Iterator<String> siguientes = g.adj(actual);
