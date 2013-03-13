@@ -37,6 +37,7 @@ public abstract class Test{
         "testgdbb/graphs/R-MAT-1M.sif",
         "testgdbb/graphs/RANDOM-1M.sif"
     };
+    public int selectedFile = 0;
     protected Graph graphTest; // Grafo de prueba
     protected Random r; // 
     protected int graphPosition; //
@@ -128,7 +129,19 @@ public abstract class Test{
     public int getFilesLenght(){
         return TestFiles.length;
     }
-
+    
+    /*
+     * Funcion que devuelve el nombre del archivo actual
+     */
+    public String getFileName(){
+        if(0 <= selectedFile && selectedFile < getFilesLenght()){
+            return TestFiles[selectedFile];
+        }else{
+            return null;
+        }
+    }
+    
+    
     /*
      * Funcion que dado un grafo genera un caso de prueba para el grafo
      * Se debe utilizar "r" para generar los nodos o arcos de manera aleatoria
@@ -141,6 +154,7 @@ public abstract class Test{
      */
     public boolean test(int option){
         for(int i = 0; i < getFilesLenght(); i++){
+            this.selectedFile = i;
             if(!this.createGraph(option, i)) return false;
             if(!this.testGraph()) return false;
         }
