@@ -32,5 +32,5 @@ public interface Graph {
     public Iterator<Integer> getInDegree ();
     public Iterator<Integer> getOutDegree ();
     public Graph subGraph(int n);
-
+    public void print(String File);
 }
