@@ -21,20 +21,20 @@ package ve.usb.gdbb;
 import java.util.Iterator;
 
 public abstract class GraphDB implements Graph {
-  protected int V;
+	protected int V;
 	protected int E;
 	
 	public int V() {
 		return V;
 	}
-    public int E() {
+	public int E() {
 		return E;
 	}
 
-    public abstract void addNode(String nodeId);
-    public abstract boolean addEdge(Edge e);
-    public abstract Iterator<String> adj(String nodeId);
-    public abstract Iterator<Edge> getEdges();
+	public abstract void addNode(String nodeId);
+	public abstract boolean addEdge(Edge e);
+	public abstract Iterator<String> adj(String nodeId);
+	public abstract Iterator<Edge> getEdges();
 	
 	public abstract boolean patternMatching(Graph subGraph);
 }
