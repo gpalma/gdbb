@@ -25,7 +25,7 @@ import ve.usb.gdbb.*;
 
 abstract class TestNP extends Test{
     /*
-   * Class used for the implementation of BFS's queue.
+	 * Class used for the implementation of BFS's queue.
 	 */
 	private class Pair {
 		public String node;
@@ -35,7 +35,7 @@ abstract class TestNP extends Test{
 			cost = c;
 		}
 	}
-    protected int K = 4; // Longitud de arborescencia
+    protected int K = 2; // Longitud de arborescencia
     protected int N = 3; // Numero de nodos a probar
     protected DiGraphAdjList getGraph(String inicial){
         DiGraphAdjList g = new DiGraphAdjList();
@@ -47,9 +47,9 @@ abstract class TestNP extends Test{
 	    Pair aux = new Pair(inicial, 0);
 	    cola.add(aux);
 	    g.addNode(inicial);
-        while(!cola.isEmpty() && numnodos++ < 10) {
+        while(!cola.isEmpty()) {
 		    aux = cola.poll();
-		    if (aux.cost == K) {
+		    if (aux.cost+1 >= K) {
 		    	break;
 		    }
 		    adj = this.graphTest.adj(aux.node);
