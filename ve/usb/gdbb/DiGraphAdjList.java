@@ -188,4 +188,46 @@ public class DiGraphAdjList implements Graph {
     public Iterator<Integer> getOutDegree() {
         return outDegree.iterator();
     }
+    
+    /*
+     * Funcion que retorna un subgrafo del grafo actual.
+     */
+    public Graph subGraph(int n) {
+    	/* Choosing a random node, to generate
+		 * a subgraph from it's BFS run
+		 */
+		Iterator<Edge> iter = this.getEdges();
+		// This is not random FIX
+		Edge randomEdge = (Edge) iter.next();
+		String randomNode = randomEdge.getSrc();
+		int totalNodes = 1;
+		/* BFS run */
+		Graph subGraph = new DiGraphAdjList();
+		Queue<String> queue = new LinkedList<String>();
+		HashSet<String> visitedNodes = new HashSet<String>();
+		Iterator<String> adjActual;
+		String next;
+		String aux = randomNode;
+		queue.add(aux);
+		
+		subGraph.addNode(aux);
+		visitedNodes.add(aux);
+
+		while(!queue.isEmpty() && totalNodes<n) {
+			aux = queue.poll();
+			adjActual = this.adj(aux);
+			while(adjActual.hasNext()) {
+				next = adjActual.next();
+				if (!visitedNodes.contains(next) && totalNodes<n) {
+					queue.add(next);
+					subGraph.addNode(next);
+					visitedNodes.add(next);
+					subGraph.addEdge(new Edge(totalNodes+"", aux, next));
+					totalNodes++;
+				}
+			}
+		}
+		
+		return subGraph;
+	}
 }
