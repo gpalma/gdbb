@@ -76,7 +76,6 @@ public class DiGraphAdjList implements Graph {
                 for (String i : line) {
                     if (pos == 0) {
                         addNode(i);
-                        cur = StoI.get(i);
                         curName = i;
                         pos = 1;
                     } else if (pos == 1) {
@@ -84,11 +83,7 @@ public class DiGraphAdjList implements Graph {
                         pos = 2;
                     } else {
                         addNode(i);
-                        curSuc = StoI.get(i);
                         addEdge(new Edge(edgeName, curName, i));
-                        outDegree.set(cur, outDegree.get(cur) + 1);
-                        inDegree.set(curSuc, inDegree.get(curSuc) + 1);
-                        E++;
                     }
                 }
             }
@@ -136,8 +131,13 @@ public class DiGraphAdjList implements Graph {
         if (!StoI.containsKey(e.getSrc()) || !StoI.containsKey(e.getDst())) {
             return false;
         }
+        int cur, curSuc;
         adj.get(StoI.get(e.getSrc())).add(StoI.get(e.getDst()));
         edges.add(e);
+        cur = StoI.get(e.getSrc());
+        curSuc = StoI.get(e.getDst());
+        outDegree.set(cur, outDegree.get(cur) + 1);
+        inDegree.set(curSuc, inDegree.get(curSuc) + 1);
         E++;
         return true;
     }
