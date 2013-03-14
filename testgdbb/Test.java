@@ -154,9 +154,12 @@ public abstract class Test{
      */
     public boolean test(int option){
         for(int i = 0; i < getFilesLenght(); i++){
+            System.out.println("Se esta creando el grafo "+ i+".");
             this.selectedFile = i;
             if(!this.createGraph(option, i)) return false;
+            System.out.println("Se empieza el algoritmo.");
             if(!this.testGraph()) return false;
+            System.out.println("Termina el algoritmo."+ i+".");
         }
         return true;
     }
