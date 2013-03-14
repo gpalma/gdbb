@@ -18,6 +18,7 @@
 
 package ve.usb.gdbb;
 
+import java.io.*
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -230,4 +231,22 @@ public class DiGraphAdjList implements Graph {
 		
 		return subGraph;
 	}
+	
+	/*Funcion que,dado el String File, imprime en un archivo, cuyo nombre
+	 *sera File, el grafo en formato SIF*/
+	public void print(String File) {
+        	try{
+                	FileWriter fstream = new FileWriter(File);
+                	BufferedWriter out = new BufferedWriter(fstream);
+                	Iterator<Edge> archs = this.getEdges();
+                	Edge curr;
+                	while ( archs.hasNext() ) {
+                        	curr = archs.next();
+                        	out.write(curr.getSrc()+"\t pr \t"+curr.getDst());
+                	}
+                	out.close();
+        	}catch (Exception e){//Catch exception if any
+                	System.err.println("Error: " + e.getMessage());
+        	}
+    	}
 }
