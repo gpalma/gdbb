@@ -22,24 +22,39 @@ import ve.usb.gdbb.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-public class TestDensestSubgraph extends Test {
+public class TestDensestSubgraph extends TestNP {
     
     public TestDensestSubgraph() {
     }
-       
-    protected void testGraph() {
-        DensestSubgraph d = new DensestSubgraph();
-        d.DenseSubgraph(graphTest);
+    
+    protected boolean testGraph() {
+        DensestSubgraph d;
+		String[] nodos;
+		DiGraphAdjList g;
+        nodos = this.nextRandomNode(N);
+        if(nodos == null) return false;
+        for(int i = 0; i < N; i++){
+            g = getGraph(nodos[i]);
+            System.out.println("\tPrueba "+ i);
+            d = new DensestSubgraph();
+            System.out.println("\tComienzo Densest Graph "+ g.V());
+            d.DenseSubgraph(g);
+            System.out.println("\tFin Densest Graph ");
+        }
+        return true;
+		
     }
     
     public static void main(String[] args) {
         Test testing = new TestDensestSubgraph();
-        Integer opt;
+		testing.test(0);
+        /*
+		Integer opt;
         Scanner console = new Scanner(System.in);
         System.out.println("Testing Dense Graph");
         System.out.println("Specify the graph type for tests:");
         System.out.println("0- DiGraphAdjList");
         opt = console.nextInt();
-        testing.test(opt);
+        testing.test(opt);*/
     }
 }
