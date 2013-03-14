@@ -30,11 +30,13 @@ public class TestGraphSummarization extends TestNP{
         if(nodos == null) return false;
         for(int i = 0; i < N; i++){
             g = getGraph(nodos[i]);
-            System.out.println("Prueba "+ i);
+            System.out.println("\tPrueba "+ i);
             s = new GraphSummarization();
+            System.out.println("\tComienzo Graphsumm "+ g.V());
             s.Summarize(g);
+            System.out.println("\tFin graphsumm ");
             g = (DiGraphAdjList)s.returnGSummarize();
-            g.print(this.getFileName()+".out");
+            g.print(this.getFileName()+i+".out");
         }
         return true;
     }
