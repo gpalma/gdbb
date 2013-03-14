@@ -31,5 +31,6 @@ public interface Graph {
     public Iterator<String> getNodes ();
     public Iterator<Integer> getInDegree ();
     public Iterator<Integer> getOutDegree ();
+    public Graph subGraph(int n);
 
 }
