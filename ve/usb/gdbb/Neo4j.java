@@ -161,6 +161,17 @@ public class Neo4j extends GraphDB {
     public Iterator<Edge> getEdges() {
     	return null;
     }
+    
+    public Iterator<String> getNodes () {
+    	return null;
+    }
+    public Iterator<Integer> getInDegree () {
+    	return null;
+    }
+    public Iterator<Integer> getOutDegree () {
+    	return null;
+    }
+    
     public Graph subGraph(int n) {
 		return null;
 	}
