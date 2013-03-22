@@ -18,13 +18,10 @@
 
 package ve.usb.gdbb;
 
-import java.io.*
+import java.io.*;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Scanner;
+import java.util.*;
 
 public class DiGraphAdjList implements Graph {
 
@@ -69,7 +66,7 @@ public class DiGraphAdjList implements Graph {
             adj = (ArrayList<ArrayList<Integer>>) new ArrayList<ArrayList<Integer>>();
             File file = new File(fileName);
             Scanner scanner = new Scanner(file);
-            int pos, cur = 0, curSuc;
+            int pos;
             String edgeName = "", curName = "";
             while (scanner.hasNextLine()) {
                 pos = 0;
@@ -242,7 +239,7 @@ public class DiGraphAdjList implements Graph {
                 	Edge curr;
                 	while ( archs.hasNext() ) {
                         	curr = archs.next();
-                        	out.write(curr.getSrc()+"\t pr \t"+curr.getDst());
+                        	out.write(curr.getSrc()+"\tpr\t"+curr.getDst()+"\n");
                 	}
                 	out.close();
         	}catch (Exception e){//Catch exception if any
