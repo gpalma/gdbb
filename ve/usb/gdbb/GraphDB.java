@@ -35,9 +35,9 @@ public abstract class GraphDB implements Graph {
 	public abstract boolean addEdge(Edge e);
 	public abstract Iterator<String> adj(String nodeId);
 	public abstract Iterator<Edge> getEdges();
-	public Iterator<String> getNodes ();
-	public Iterator<Integer> getInDegree ();
-	public Iterator<Integer> getOutDegree ();
+	public abstract Iterator<String> getNodes();
+	public abstract Iterator<Integer> getInDegree();
+	public abstract Iterator<Integer> getOutDegree();
 	
 	public abstract boolean patternMatching(Graph subGraph);
 }
