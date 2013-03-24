@@ -182,35 +182,17 @@ public class DexDB extends GraphDB {
         
         return nodeList.iterator();
     }
-    public Iterator<Integer> getInDegree() {
-        ArrayList<Integer> nodeList = new ArrayList<Integer>();
-        Objects nodesAll = g.select(NodeType);
-        
-        ObjectsIterator it = nodesAll.iterator();
-        while (it.hasNext()) {
-            long nodesId = it.next();
-            nodeList.add((int) g.degree(nodesId, DirectsType, EdgesDirection.Ingoing)); //WARNING
-        }
-        
-        nodesAll.close();
-        it.close();
-        
-        return nodeList.iterator();
+    public Integer getInDegree(String nodeId) {
+        Value value = new Value();
+        long nodesId = g.findObject(NodeIdType, value.setString(nodeId));
+
+        return (int) g.degree(nodesId, DirectsType, EdgesDirection.Ingoing);
     }
-    public Iterator<Integer> getOutDegree() {
-        ArrayList<Integer> nodeList = new ArrayList<Integer>();
-        Objects nodesAll = g.select(NodeType);
-        
-        ObjectsIterator it = nodesAll.iterator();
-        while (it.hasNext()) {
-            long nodesId = it.next();
-            nodeList.add((int) g.degree(nodesId, DirectsType, EdgesDirection.Outgoing)); //WARNING
-        }
-        
-        nodesAll.close();
-        it.close();
-        
-        return nodeList.iterator();
+    public Integer getOutDegree(String nodeId) {
+        Value value = new Value();
+        long nodesId = g.findObject(NodeIdType, value.setString(nodeId));
+
+        return (int) g.degree(nodesId, DirectsType, EdgesDirection.Outgoing);
     }
 
     public boolean patternMatching(Graph subGraph) {
@@ -219,22 +201,6 @@ public class DexDB extends GraphDB {
     
     public Graph subGraph(int n) {
         return null;
-    }
-    
-    public void print(String File) {
-        try{
-            FileWriter fstream = new FileWriter(File);
-            BufferedWriter out = new BufferedWriter(fstream);
-            Iterator<Edge> archs = this.getEdges();
-            Edge curr;
-            while ( archs.hasNext() ) {
-                    curr = archs.next();
-                    out.write(curr.getSrc()+"\tpr\t"+curr.getDst()+"\n");
-            }
-            out.close();
-        }catch (Exception e){//Catch exception if any
-            System.err.println("Error: " + e.getMessage());
-        }
     }
     
 }
