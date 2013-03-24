@@ -29,8 +29,8 @@ public interface Graph {
     public Iterator<String> adj(String nodeId);
     public Iterator<Edge> getEdges ();
     public Iterator<String> getNodes ();
-    public Iterator<Integer> getInDegree ();
-    public Iterator<Integer> getOutDegree ();
+    public Integer getInDegree (String nodeId);
+    public Integer getOutDegree (String nodeId);
     public Graph subGraph(int n);
     public void print(String File);
 }
