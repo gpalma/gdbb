@@ -175,16 +175,22 @@ public class DiGraphAdjList implements Graph {
      * Funcion que retorna un iterador sobre un arreglo que contiene los
      * grados de entrada de cada nodo en orden de aparicion en el grafo.
      */
-    public Iterator<Integer> getInDegree() {
-        return inDegree.iterator();
+    public Integer getInDegree(String nodeId) {
+        if (!StoI.containsKey(nodeId)) {
+            return -1;
+        }
+        return inDegree.get(StoI.get(nodeId));
     }
     
     /*
      * Funcion que retorna un iterador sobre un arreglo que contiene los
      * grados de salida de cada nodo en orden de aparicion en el grafo.
      */
-    public Iterator<Integer> getOutDegree() {
-        return outDegree.iterator();
+    public Integer getOutDegree(String nodeId) {
+        if (!StoI.containsKey(nodeId)) {
+            return -1;
+        }
+        return outDegree.get(StoI.get(nodeId));
     }
     
     /*
