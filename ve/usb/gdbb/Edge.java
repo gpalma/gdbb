@@ -52,5 +52,11 @@ public class Edge {
     public void setSrc(String src) {
         this.src = src;
     }
+    /*
+     * Returns the string representation of the edge
+     */
+    public String toString(){
+        return "([" + this.id + "] " + this.src + " " + this.dst+")";
+    }
 
 }
