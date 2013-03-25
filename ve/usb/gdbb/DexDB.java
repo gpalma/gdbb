@@ -183,12 +183,20 @@ public class DexDB extends GraphDB {
         return nodeList.iterator();
     }
     public Integer getInDegree(String nodeId) {
+        if (!hasNode(nodeId)) {
+            return null;
+        }
+        
         Value value = new Value();
         long nodesId = g.findObject(NodeIdType, value.setString(nodeId));
 
         return (int) g.degree(nodesId, DirectsType, EdgesDirection.Ingoing);
     }
     public Integer getOutDegree(String nodeId) {
+        if (!hasNode(nodeId)) {
+            return null;
+        }
+        
         Value value = new Value();
         long nodesId = g.findObject(NodeIdType, value.setString(nodeId));
 
