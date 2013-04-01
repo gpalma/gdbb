@@ -20,6 +20,7 @@ package ve.usb.gdbb;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
@@ -34,9 +35,12 @@ public class Neo4j extends GraphDB {
 	private DynamicRelationshipType relType;
 	private IndexManager indexManager;
 	private Index<Node> nodesIdIndex;
+	private ArrayList<String> nodesId;
+	private ArrayList<Edge> rels;
+	
 
 	private boolean hasNode(String nodeId) {
-		Node newNode = nodesIdIndex.get("id", nodeId).getSingle();
+		Node newNode = nodesIdIndex.get("idNode", nodeId).getSingle();
 		boolean exists = (newNode!=null);
 		return exists;
 	}
@@ -45,8 +49,8 @@ public class Neo4j extends GraphDB {
 		if (!this.hasNode(edge.getSrc()) || !this.hasNode(edge.getDst()))
 			return false;
 		
-		Node src = nodesIdIndex.get("id", edge.getSrc()).getSingle();
-		Node dst = nodesIdIndex.get("id", edge.getDst()).getSingle();
+		Node src = nodesIdIndex.get("idNode", edge.getSrc()).getSingle();
+		Node dst = nodesIdIndex.get("idNode", edge.getDst()).getSingle();
 		
 		for (Relationship rel : src.getRelationships(this.relType)) {
 			if (rel.getOtherNode(src).equals(dst)) return true;
@@ -59,6 +63,8 @@ public class Neo4j extends GraphDB {
 		indexManager = graphDB.index();
 		nodesIdIndex = indexManager.forNodes("ids");
 		relType =  DynamicRelationshipType.withName("isRelated");
+		this.nodesId = new ArrayList();
+		this.rels = new ArrayList();
 		
 		try {
             this.V = 0;
@@ -109,8 +115,9 @@ public class Neo4j extends GraphDB {
 			try
 			{
 				Node newNode = graphDB.createNode();
-				newNode.setProperty("id", nodeId);
-				nodesIdIndex.add(newNode, "id", nodeId);
+				newNode.setProperty("idNode", nodeId);
+				nodesIdIndex.add(newNode, "idNode", nodeId);
+				this.nodesId.add(nodeId);
 				this.V++;
 				tx.success();
 			}
@@ -123,27 +130,28 @@ public class Neo4j extends GraphDB {
 
     public boolean addEdge(Edge e){
 		if (!hasEdge(e)) {
-			Node src = nodesIdIndex.get("id", e.getSrc()).getSingle();
-			Node dst = nodesIdIndex.get("id", e.getDst()).getSingle();
+			Node src = nodesIdIndex.get("idNode", e.getSrc()).getSingle();
+			Node dst = nodesIdIndex.get("idNode", e.getDst()).getSingle();
 			
 			Transaction tx = graphDB.beginTx();
 			try {
 				if (src==null) {
 					src = graphDB.createNode();
-					src.setProperty("id", e.getSrc());						
-					nodesIdIndex.add(src, "id", e.getSrc());				
+					src.setProperty("idNode", e.getSrc());						
+					nodesIdIndex.add(src, "idNode", e.getSrc());				
 					this.V++;
 				}
 				if (dst==null) { 
 					dst = graphDB.createNode();
-					dst.setProperty("id", e.getDst());						
-					nodesIdIndex.add(dst, "id", e.getDst());
+					dst.setProperty("idNode", e.getDst());						
+					nodesIdIndex.add(dst, "idNode", e.getDst());
 					this.V++;
 				}
 				
 				relType = DynamicRelationshipType.withName("isRelated");
 				Relationship rel = src.createRelationshipTo(dst, relType);			
 				rel.setProperty("relationship-type", "isRelated");
+				this.rels.add(e);
 				this.E++;
 				tx.success();
 			}
@@ -156,27 +164,68 @@ public class Neo4j extends GraphDB {
 	}
 	
     public Iterator<String> adj(String nodeId) {
-    	return null;
+    	String QueryPM =
+    			"START n=node:node_auto_index(idNode='" + 
+    			nodeId + "') " +
+    			"MATCH n-[]->m RETURN m.idNode";
+
+	    ExecutionEngine engine = new ExecutionEngine(graphDB);
+	    ExecutionResult result = engine.execute(QueryPM);
+	
+	    ArrayList<String> adjNodeList = new ArrayList<String>();
+	
+	    for ( Map<String, Object> row : result ){
+	    	for ( Map.Entry<String, Object> column : row.entrySet() ){
+	    		adjNodeList.add(column.getValue().toString());
+	    	}
+	    }
+	    return adjNodeList.iterator();
     }
     public Iterator<Edge> getEdges() {
-    	return null;
+    	return rels;
     }
     
     public Iterator<String> getNodes () {
-    	return null;
+    	return nodesId;
     }
-    public Iterator<Integer> getInDegree () {
-    	return null;
+    public Integer getInDegree(String nodeId) {
+    	
+    	// GET IN DEGREE
+
+    	String QueryPM =
+    				"START n=node:node_auto_index(idNode='" + 
+    				nodeId + "') " +
+    				"MATCH m-[]->n RETURN count(m)";
+
+    	ExecutionEngine engine = new ExecutionEngine(graphDB);
+    	ExecutionResult result = engine.execute(QueryPM);
+
+    	for ( Map<String, Object> row : result ){
+    		for ( Map.Entry<String, Object> column : row.entrySet() ){
+    			return (Integer.parseInt(column.getValue().toString()));
+    		}
+    	}
+    	return 0;
     }
-    public Iterator<Integer> getOutDegree () {
-    	return null;
+    public Integer getOutDegree (String nodeId) {
+
+    	String QueryPM =
+    				"START n=node:node_auto_index(idNode='" + 
+    				nodeId + "') " +
+    				"MATCH n-[]->m RETURN count(m)";
+
+    	ExecutionEngine engine = new ExecutionEngine(graphDB);
+    	ExecutionResult result = engine.execute(QueryPM);
+
+    	for ( Map<String, Object> row : result ){
+    		for ( Map.Entry<String, Object> column : row.entrySet() ){
+    			return (Integer.parseInt(column.getValue().toString()));
+    		}
+    	}
+    	return 0;
     }
     
-    public Graph subGraph(int n) {
-		return null;
-	}
-	
-	public boolean patternMatching(Graph subGraph) {
+    public boolean patternMatching(Graph subGraph) {
 		Iterator<Edge> subGEdges = subGraph.getEdges();
 		if (!subGEdges.hasNext())
 			return false;
