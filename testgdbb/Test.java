@@ -28,15 +28,16 @@ import ve.usb.gdbb.*;
  */
 public abstract class Test{
     static protected String[] TestFiles = {
-        "testgdbb/graphs/DSJC1000.1.col.sif",
-        "testgdbb/graphs/DSJC1000.5.col.sif",
-        "testgdbb/graphs/DSJC1000.9.col.sif",
-        "testgdbb/graphs/USA-road-d.NY.gr.sif",
-        "testgdbb/graphs/USA-road-d.FLA.gr.sif",
-        "testgdbb/graphs/SSCA2-17.sif",
-        "testgdbb/graphs/R-MAT-1M.sif",
-        "testgdbb/graphs/RANDOM-1M.sif"
+        "testgdbb/graphs/DSJC1000.1.col",
+        "testgdbb/graphs/DSJC1000.5.col",
+        "testgdbb/graphs/DSJC1000.9.col",
+        "testgdbb/graphs/USA-road-d.NY.gr",
+        "testgdbb/graphs/USA-road-d.FLA.gr",
+        "testgdbb/graphs/SSCA2-17",
+        "testgdbb/graphs/R-MAT-1M",
+        "testgdbb/graphs/RANDOM-1M"
     };
+    static protected String[] format ={"sif", "nt"};
     public int selectedFile = 0;
     protected Graph graphTest; // Grafo de prueba
     protected Random r; // Generador
@@ -54,15 +55,17 @@ public abstract class Test{
         }
         graphPosition = posGraph;
         if(option == 0){
-            graphTest = null;
-            graphTest = new DiGraphAdjList(TestFiles[posGraph]);
-            r = null;
-            r = new Random(posGraph);
-            return true;
+            graphTest = new DiGraphAdjList(TestFiles[posGraph]+"."+format[0]);
+        }else if(option == 1){
+            graphTest = new HyperGraphDB(TestFiles[posGraph]+"."+format[0]);
+        }else if(option == 2){
+            graphTest = new DexDB(TestFiles[posGraph]+"."+format[0]);
         }else{
             System.err.print("Dont exist a Graph for this option\n");
+            return false;
         }
-        return false;
+        r = new Random(posGraph);
+        return true;
     }
     
     /*
@@ -115,6 +118,9 @@ public abstract class Test{
         return randomNodes;
     }
     
+    protected void postTest(){
+        return;
+    }
     
     /*
      * Devuelve el proximo numero pseudoaleatorio dentro del rango [0..n]
@@ -160,7 +166,9 @@ public abstract class Test{
             System.out.println("Se empieza el algoritmo.");
             if(!this.testGraph()) return false;
             System.out.println("Termina el algoritmo."+ i+".");
+            this.postTest();
         }
         return true;
     }
 }
+
