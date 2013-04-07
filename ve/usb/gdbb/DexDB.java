@@ -211,4 +211,12 @@ public class DexDB extends GraphDB {
         return null;
     }
     
+    protected void finalize(){
+        if(sess != null){
+            sess.close();
+            db.close();
+            dex.close();
+        }
+    }
+    
 }
