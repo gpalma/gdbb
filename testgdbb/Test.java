@@ -27,8 +27,13 @@ import ve.usb.gdbb.*;
  * Clase abstracta Test
  */
 public abstract class Test{
+    private String path = "../../user4/graphs/";
     static protected String[] TestFiles = {
-        "testgdbb/graphs/DSJC1000.1.col",
+        "small/DSJC1000.1.col",
+        "small/DSJC1000.5.col"
+    };
+    /*
+    "testgdbb/graphs/DSJC1000.1.col",
         "testgdbb/graphs/DSJC1000.5.col",
         "testgdbb/graphs/DSJC1000.9.col",
         "testgdbb/graphs/USA-road-d.NY.gr",
@@ -36,12 +41,21 @@ public abstract class Test{
         "testgdbb/graphs/SSCA2-17",
         "testgdbb/graphs/R-MAT-1M",
         "testgdbb/graphs/RANDOM-1M"
-    };
+    */
     static protected String[] format ={"sif", "nt"};
     public int selectedFile = 0;
     protected Graph graphTest; // Grafo de prueba
     protected Random r; // Generador
     protected int graphPosition; //
+    
+    /*
+     * Devuelve el archivo actual con el que se esta probando
+     * recibe un entero para especificar el formato.
+     */
+    String getCurrentFile(int f) {
+        return path+TestFiles[posGraph]+"."+format[f];
+    }
+    
     
     /*
      * Funcion que crea un grafo a partir de una opcion de grafo
@@ -55,11 +69,11 @@ public abstract class Test{
         }
         graphPosition = posGraph;
         if(option == 0){
-            graphTest = new DiGraphAdjList(TestFiles[posGraph]+"."+format[0]);
+            graphTest = new DiGraphAdjList(getCurrentFile(0));
         }else if(option == 1){
-            graphTest = new HyperGraphDB(TestFiles[posGraph]+"."+format[0]);
+            graphTest = new HyperGraphDB(getCurrentFile(0));
         }else if(option == 2){
-            graphTest = new DexDB(TestFiles[posGraph]+"."+format[0]);
+            graphTest = new DexDB(getCurrentFile(0));
         }else{
             System.err.print("Dont exist a Graph for this option\n");
             return false;
@@ -82,7 +96,7 @@ public abstract class Test{
         }
         Arrays.sort(randomNodesPos);
         try {
-            File file = new File(TestFiles[graphPosition]);
+            File file = new File(getCurrentFile(0));
             Scanner scanner = new Scanner(file);
             int pos, cur = 0, readed = 0;
             while (scanner.hasNextLine() && cur < amount) {
