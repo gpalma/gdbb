@@ -39,7 +39,7 @@ public abstract class Test{
     };
     public int selectedFile = 0;
     protected Graph graphTest; // Grafo de prueba
-    protected Random r; // 
+    protected Random r; // Generador
     protected int graphPosition; //
     
     /*
