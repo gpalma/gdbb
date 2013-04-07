@@ -17,8 +17,6 @@
  */
 package ve.usb.gdbb;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.util.*;
 
 public class DensestSubgraph {
@@ -31,6 +29,20 @@ public class DensestSubgraph {
     private Boolean validOut[];
     private ArrayList<ArrayList<Integer>> predecessors;
     private Integer addedVertexs;
+    
+    private class CustomComparatorInDegree implements Comparator<Integer> {
+        @Override
+        public int compare(Integer o1, Integer o2) {
+            return inDegrees.get(o1).compareTo(inDegrees.get(o2));
+        }
+    }
+    
+    private class CustomComparatorOutDegree implements Comparator<Integer> {
+        @Override
+        public int compare(Integer o1, Integer o2) {
+            return outDegrees.get(o1).compareTo(outDegrees.get(o2));
+        }
+    }
     
     public DensestSubgraph(){
     }
@@ -87,40 +99,6 @@ public class DensestSubgraph {
         validOut[nodeIndex] = false;
     }
     
-    private int getMinimumInDegree() {
-        int size = inDegrees.size();
-        int minimum = -1;
-        for (int i = 0; i < size; i++) {
-            if (validIn[i]) {
-                if (minimum != -1) {
-                    if (inDegrees.get(i) < inDegrees.get(minimum)) {
-                        minimum = i;
-                    }
-                } else {
-                    minimum = i;
-                }
-            }
-        }
-        return minimum;
-    }
-    
-    private int getMinimumOutDegree() {
-        int size = outDegrees.size();
-        int minimum = -1;
-        for (int i = 0; i < size; i++) {
-            if (validOut[i]) {
-                if (minimum != -1) {
-                    if (outDegrees.get(i) < outDegrees.get(minimum)) {
-                        minimum = i;
-                    }
-                } else {
-                    minimum = i;
-                }
-            }
-        }
-        return minimum;
-    }
-    
     private double calculateDensity(Graph g) {
       int EdgesST = 0;
     	ArrayList<Integer> S = new ArrayList<Integer>();
@@ -160,12 +138,13 @@ public class DensestSubgraph {
     	return sizeS*sizeT != 0 ? (EdgesST/Math.sqrt(sizeS*sizeT)) : 0.0;
     }
     
-    public void DenseSubgraph(Graph g) {
-        Iterator<Integer> inDegreeIT = g.getInDegree();
-        Iterator<Integer> outDegreeIT = g.getOutDegree();
+    public Graph DenseSubgraph(Graph g) {
+        ArrayList<Integer> indexIn = new ArrayList<Integer>();
+        ArrayList<Integer> indexOut = new ArrayList<Integer>();
         Iterator<String> it = g.getNodes();
         int i, j, vertexs, Vi, Vo, vertexsAll = g.V();
         double density, tmp;
+        String cur;
         Boolean densestValidIn[] = new Boolean[vertexsAll];
         Boolean densestValidOut[] = new Boolean[vertexsAll];
         
@@ -178,11 +157,19 @@ public class DensestSubgraph {
         this.predecessors = new ArrayList<ArrayList<Integer>>();
         initializePredecessors(g);
         
-        while (it.hasNext() && inDegreeIT.hasNext() && outDegreeIT.hasNext()) {
-            indexToString.add(it.next());
-            inDegrees.add(inDegreeIT.next());
-            outDegrees.add(outDegreeIT.next());
+        i = 0;
+        while (it.hasNext()) {
+            cur = it.next();
+            indexToString.add(cur);
+            inDegrees.add(g.getInDegree(cur));
+            outDegrees.add(g.getOutDegree(cur));
+            indexIn.add(i);
+            indexOut.add(i);
+            i++;
         }
+        
+        Collections.sort(indexIn, new CustomComparatorInDegree());
+        Collections.sort(indexOut, new CustomComparatorOutDegree());
         
         for (int k = 0; k < vertexsAll; k++) {
             validIn[k] = true;
@@ -198,22 +185,18 @@ public class DensestSubgraph {
         vertexs = 2*vertexsAll;
 	while ( vertexs > 0 ) {	
             if (i < vertexsAll && j < vertexsAll) {
-                Vi = getMinimumInDegree();
-                Vo = getMinimumOutDegree();
-                if (inDegrees.get(Vi) <= outDegrees.get(Vo) ) {
-                    deleteIncoming(Vi);
+                if (inDegrees.get(i) <= outDegrees.get(j) ) {
+                    deleteIncoming(i);
                     i++;
                 } else {
-                    deleteOutgoing(Vo, g);
+                    deleteOutgoing(j, g);
                     j++;
                 }
             } else if (i < vertexsAll && j == vertexsAll) {
-                Vi = getMinimumInDegree();
-                deleteIncoming(Vi);
+                deleteIncoming(i);
                 i++;
             } else if (i == vertexsAll && j < vertexsAll) {
-                Vo = getMinimumOutDegree();
-                deleteOutgoing(Vo, g);
+                deleteOutgoing(j, g);
                 j++;
             }
 
@@ -230,28 +213,22 @@ public class DensestSubgraph {
             vertexs--;
 	}
 	
-	System.out.println("The best density of a subgraph of the tested graph is " + density);
-        print("BestDensitySubgraph", g , densestValidIn, densestValidOut);
-    }
-    
-    public void print(String File, Graph g, Boolean[] validIn, Boolean[] validOut) {
-    	try{
-            FileWriter fstream = new FileWriter(File);
-            BufferedWriter out = new BufferedWriter(fstream);
-            Iterator<Edge> archs = g.getEdges();
-            Edge curr;
-            int srcIndx, dstIndx;
-            while ( archs.hasNext() ) {
-                curr = archs.next();
-                srcIndx = stringToIndex.get(curr.getSrc());
-                dstIndx = stringToIndex.get(curr.getDst());
-                if (validOut[srcIndx] && validIn[dstIndx]) {
-                    out.write(curr.getSrc()+"\t" + curr.getId() +"\t"+curr.getDst() + "\n");
-                }
+        Graph densestGraph = new DiGraphAdjList();
+        Iterator<Edge> itEdges = g.getEdges();
+        Edge curEdge;
+        int srcIndx, dstIndx;
+        
+        while (itEdges.hasNext()) {
+            curEdge = itEdges.next();
+            srcIndx = stringToIndex.get(curEdge.getSrc());
+            dstIndx = stringToIndex.get(curEdge.getDst());
+            if (densestValidOut[srcIndx] && densestValidIn[dstIndx]) {
+                densestGraph.addNode(curEdge.getSrc());
+                densestGraph.addNode(curEdge.getDst());
+                densestGraph.addEdge(curEdge);
             }
-            out.close();
-  	}catch (Exception e){//Catch exception if any
-            System.err.println("Error: " + e.getMessage());
-  	}
+        }
+        
+        return densestGraph;
     }
 }
