@@ -49,7 +49,7 @@ public class HyperGraphDB extends GraphDB{
      */
     public HyperGraphDB(String fileName) {
         try {
-            HGHandle h1, h2;
+            HGHandle h1 = null, h2;
             this.V = 0;
             this.E = 0;
             this.graph = new HyperGraph("hypgraph");
@@ -66,14 +66,14 @@ public class HyperGraphDB extends GraphDB{
                 for (String i : line) {
                     if (pos == 0) {
                         curName = i;
+                        h1 = addNode2(curName);
                         pos = 1;
                     } else if (pos == 1) {
                         edgeName = i;
                         pos = 2;
                     } else {
-                        h1 = addNode2(curName);
                         h2 = addNode2(i);
-                        addEdge(i, h1, h2);
+                        addEdge(edgeName, h1, h2);
                     }
                 }
             }
@@ -126,15 +126,11 @@ public class HyperGraphDB extends GraphDB{
     public Iterator<String> adj(String nodeId){
         it = new ArrayList();
         HGSearchResult<HGHandle> rs;
-        HGHandle current;
+        HGHandle current = graph.getHandle(nodeId);
         HGValueLink a;
-        rs = graph.find(hg.incident(graph.getHandle(nodeId)));
-        while (rs.hasNext()){
-            current = rs.next();
-            a = graph.get(current);
-            if(graph.get(a.getTargetAt(0)).equals(nodeId)){
-                it.add((String)graph.get(a.getTargetAt(1)));
-            }
+        for (Object s : hg.getAll(graph, hg.orderedLink(current))){
+            a = (HGValueLink)s;
+            it.add((String)graph.get(a.getTargetAt(1)));
         }
         return it.iterator();
     }
@@ -270,6 +266,8 @@ public class HyperGraphDB extends GraphDB{
         while(ite.hasNext()){
             System.out.print(" "+ite.next());
         }System.out.print("\n");
+        
+        
         
     }
     
