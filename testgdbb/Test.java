@@ -195,7 +195,7 @@ public abstract class Test{
                 long stopTime = System.currentTimeMillis();
                 long elapsedTime = stopTime - startTime;
                 System.out.println("Tiempo usado: " + elapsedTime);
-                System.out.println("Memoria usada: " + getMemory() + "kb");
+                System.out.println("Memoria usada: " + getMemory()/1024 + "kb");
                 this.postTest();
             }
         }
