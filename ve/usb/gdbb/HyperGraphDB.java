@@ -28,7 +28,7 @@ import org.hypergraphdb.HGQuery.hg.*;
 public class HyperGraphDB extends GraphDB{
     
     
-    protected HyperGraph graph = null; 
+    protected static HyperGraph graph = null; 
     protected org.hypergraphdb.HGQuery.hg hg;
     protected ArrayList<String> it;
     protected ArrayList<Edge> ite;
@@ -39,7 +39,9 @@ public class HyperGraphDB extends GraphDB{
     public HyperGraphDB(){
         this.V = 0;
         this.E = 0;
-        this.graph = new HyperGraph("myhypgraph");
+        if(graph == null){
+            this.graph = new HyperGraph("hgraph");
+        }
         this.hg = new org.hypergraphdb.HGQuery.hg();
         this.removeAll();
     }
@@ -52,7 +54,9 @@ public class HyperGraphDB extends GraphDB{
             HGHandle h1 = null, h2;
             this.V = 0;
             this.E = 0;
-            this.graph = new HyperGraph("hypgraph");
+            if(graph == null){
+                this.graph = new HyperGraph("hgraph");
+            }
             this.hg = new org.hypergraphdb.HGQuery.hg();
             this.removeAll();
             
@@ -105,6 +109,7 @@ public class HyperGraphDB extends GraphDB{
     public boolean addEdge(String id, HGHandle h1, HGHandle h2){
         Link li = new Link(id);
         graph.add(new HGValueLink(li, h1, h2));
+        this.E++;
         return true;
     }
     
