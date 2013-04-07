@@ -161,6 +161,14 @@ public abstract class Test{
         }
     }
     
+    /*
+     * Funcion que retorna la cantidad de memoria usada.
+     */
+    long getMemory() {
+        Runtime runtime = Runtime.getRuntime();
+        runtime.gc();
+        return runtime.totalMemory() - runtime.freeMemory();
+    }
     
     /*
      * Funcion que dado un grafo genera un caso de prueba para el grafo
@@ -173,14 +181,23 @@ public abstract class Test{
      * Funcion que ejecuta el test dada una opcion de grafo
      */
     public boolean test(int option){
-        for(int i = 0; i < getFilesLenght(); i++){
-            System.out.println("Se esta creando el grafo "+ i+".");
-            this.selectedFile = i;
-            if(!this.createGraph(option, i)) return false;
-            System.out.println("Se empieza el algoritmo.");
-            if(!this.testGraph()) return false;
-            System.out.println("Termina el algoritmo."+ i+".");
-            this.postTest();
+        
+        for(int option = 1; i < 3; option++) {
+            System.out.println("Manejador " + option);
+            for(int i = 0; i < getFilesLenght(); i++){
+                System.out.println("Se esta creando el grafo "+ i+".");
+                this.selectedFile = i;
+                if(!this.createGraph(option, i)) return false;
+                long startTime = System.currentTimeMillis();
+                System.out.println("Se empieza el algoritmo.");
+                if(!this.testGraph()) return false;
+                System.out.println("Termina el algoritmo."+ i+".");
+                long stopTime = System.currentTimeMillis();
+                long elapsedTime = stopTime - startTime;
+                System.out.println("Tiempo usado: " + elapsedTime);
+                System.out.println("Memoria usada: " + getMemory() + "kb");
+                this.postTest();
+            }
         }
         return true;
     }
