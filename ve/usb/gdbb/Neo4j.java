@@ -307,4 +307,11 @@ public class Neo4j extends GraphDB {
 		}
 		return false;
 	}
+
+	protected void finalize(){
+		if(graphDB != null){
+			graphDB.shutdown();
+		}
+	}
 }
+
