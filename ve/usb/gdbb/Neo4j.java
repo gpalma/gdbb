@@ -308,6 +308,10 @@ public class Neo4j extends GraphDB {
 		return false;
 	}
 
+	public Graph subGraph(int n) {
+		return null;
+	}
+
 	protected void finalize(){
 		if(graphDB != null){
 			graphDB.shutdown();
