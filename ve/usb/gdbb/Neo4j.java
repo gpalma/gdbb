@@ -45,7 +45,9 @@ public class Neo4j extends GraphDB {
 	 */
 	private Neo4j(String fileName, String pathDB) {
 
-		this.graphDB = new GraphDatabaseFactory().newEmbeddedDatabase(pathDB);
+		this.graphDB = new GraphDatabaseFactory()
+				.newEmbeddedDatabaseBuilder(pathDB)
+				.newGraphDatabase();
 		indexManager = graphDB.index();
 		nodesIdIndex = indexManager.forNodes("ids");
 		relType =  DynamicRelationshipType.withName("isRelated");
@@ -199,9 +201,10 @@ public class Neo4j extends GraphDB {
 	 * nodes adjacents to 'nodeId'.
 	 */
 	public Iterator<String> adj(String nodeId) {
+		Node node = nodesIdIndex.get("idNode", nodeId).getSingle();
 		String QueryPM =
-			"START n=node:node_auto_index(idNode='" + 
-			nodeId + "') " +
+			"START n=node(" + 
+			node.getId() + ") " +
 			"MATCH n-[]->m RETURN m.idNode";
 
 		ExecutionEngine engine = new ExecutionEngine(graphDB);
@@ -236,10 +239,10 @@ public class Neo4j extends GraphDB {
 	 * 'nodeId'. NULL otherwise.
 	 */
 	public Integer getInDegree(String nodeId) {
-
+		Node node = nodesIdIndex.get("idNode", nodeId).getSingle();
 		String QueryPM =
-			"START n=node:node_auto_index(idNode='" + 
-			nodeId + "') " +
+			"START n=node(" + 
+			node.getId() + ") " +
 			"MATCH m-[]->n RETURN count(m)";
 
 		ExecutionEngine engine = new ExecutionEngine(graphDB);
@@ -258,10 +261,10 @@ public class Neo4j extends GraphDB {
 	 * 'nodeId'. NULL otherwise.
 	 */
 	public Integer getOutDegree (String nodeId) {
-
+		Node node = nodesIdIndex.get("idNode", nodeId).getSingle();
 		String QueryPM =
-			"START n=node:node_auto_index(idNode='" + 
-			nodeId + "') " +
+			"START n=node(" + 
+			node.getId() + ") " +
 			"MATCH n-[]->m RETURN count(m)";
 
 		ExecutionEngine engine = new ExecutionEngine(graphDB);
@@ -310,6 +313,10 @@ public class Neo4j extends GraphDB {
 
 	public Graph subGraph(int n) {
 		return null;
+	}
+	
+	public void close(){
+		graphDB.shutdown();
 	}
 
 	protected void finalize(){
