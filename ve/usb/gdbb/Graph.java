@@ -31,6 +31,10 @@ public interface Graph {
     public Iterator<String> getNodes ();
     public Integer getInDegree (String nodeId);
     public Integer getOutDegree (String nodeId);
-    public Graph subGraph(int n);
+	public boolean bfs(String src, String dst);
+	public boolean dfs(String src, String dst);
+	public Iterator<String> kHops(String src, int k);
     public void print(String File);
+    public void close();
+
 }

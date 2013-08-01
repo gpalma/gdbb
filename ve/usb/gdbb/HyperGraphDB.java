@@ -24,258 +24,448 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Scanner;
 import org.hypergraphdb.*;
-import org.hypergraphdb.HGQuery.hg.*;
+import org.hypergraphdb.query.Not;
+import org.hypergraphdb.handle.SequentialUUIDHandleFactory;
+import org.hypergraphdb.algorithms.*;
+import org.hypergraphdb.util.Pair;
+import org.hypergraphdb.HGIndexManager;
+import org.hypergraphdb.indexing.*;
+
+import org.hypergraphdb.storage.bje.BJEConfig;
+import org.hypergraphdb.storage.bdb.BDBConfig;
+import java.util.List;
 public class HyperGraphDB extends GraphDB{
-    
-    
-    protected static HyperGraph graph = null; 
-    protected org.hypergraphdb.HGQuery.hg hg;
-    protected ArrayList<String> it;
-    protected ArrayList<Edge> ite;
-    
-    /*
-     * Graph Constructor
-     */
-    public HyperGraphDB(){
-        this.V = 0;
-        this.E = 0;
-        if(graph == null){
-            this.graph = new HyperGraph("hgraph");
-        }
-        this.hg = new org.hypergraphdb.HGQuery.hg();
-        this.removeAll();
-    }
-    
-    /*
-     * Graph Constructor. It receive the name of a file in format sif
-     */
-    public HyperGraphDB(String fileName) {
-        try {
-            HGHandle h1 = null, h2;
-            this.V = 0;
-            this.E = 0;
-            if(graph == null){
-                this.graph = new HyperGraph("hgraph");
-            }
-            this.hg = new org.hypergraphdb.HGQuery.hg();
-            this.removeAll();
-            
-            File file = new File(fileName);
-            Scanner scanner = new Scanner(file);
-            int pos, cur = 0, curSuc;
-            String edgeName = "", curName = "";
-            while (scanner.hasNextLine()) {
-                pos = 0;
-                String[] line = scanner.nextLine().split("\t");
-                for (String i : line) {
-                    if (pos == 0) {
-                        curName = i;
-                        h1 = addNode2(curName);
-                        pos = 1;
-                    } else if (pos == 1) {
-                        edgeName = i;
-                        pos = 2;
-                    } else {
-                        h2 = addNode2(i);
-                        addEdge(edgeName, h1, h2);
-                    }
-                }
-            }
-            scanner.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-    
-    /*
-     * Add a node to the graph
-     */
-    public void addNode(String nodeId){
-        graph.add(nodeId);
-        this.V++;
-    }
-    
-    /*
-     * Add an node to the graph, but returns the HGHandle
-     */
-    public HGHandle addNode2(String nodeId){
-        this.V++;
-        return graph.add(nodeId);
-    }
-    
-    /*
-     * Add an edge with HGhandle h1 and h2 called id
-     */
-    public boolean addEdge(String id, HGHandle h1, HGHandle h2){
-        Link li = new Link(id);
-        graph.add(new HGValueLink(li, h1, h2));
-        this.E++;
-        return true;
-    }
-    
-    /*
-     * Add an edge
-     */
-    public boolean addEdge(Edge e){
-        Link li = new Link(e.getId());
-        HGHandle h1 = graph.getHandle(e.getSrc());
-        HGHandle h2 = graph.getHandle(e.getDst());
-        graph.add(new HGValueLink(li, h1, h2));
-        this.E++;
-        return true;
-    }
-    
-    /*
-     * Returns an iterator with the nodes adjacents to nodeId
-     */
-    public Iterator<String> adj(String nodeId){
-        it = new ArrayList();
-        HGSearchResult<HGHandle> rs;
-        HGHandle current = graph.getHandle(nodeId);
-        HGValueLink a;
-        for (Object s : hg.getAll(graph, hg.orderedLink(current))){
-            a = (HGValueLink)s;
-            it.add((String)graph.get(a.getTargetAt(1)));
-        }
-        return it.iterator();
-    }
-    
-    /*
-     * Returns an iterator with all the edges of the graph
-     */
-    public Iterator<Edge> getEdges(){
-        ite = new ArrayList();
-        HGHandle h1, h2;
-        Edge e;
-        HGValueLink a;
-        Link li;
-        for (Object s : hg.getAll(graph, hg.type(Link.class))){
-            a = (HGValueLink) s;
-            h1 = a.getTargetAt(0);
-            h2 = a.getTargetAt(1);
-            li = (Link)a.getValue();
-            
-            ite.add(new Edge(li.s, (String)graph.get(h1), (String)graph.get(h2)));
-        }
-        return ite.iterator();
-    }
-    
-    /*
-     * Returns an iterator with all the nodes of the graph
-     */
-    public Iterator<String> getNodes (){
-        it = new ArrayList();
-        for (Object s : hg.getAll(graph, hg.type(String.class))){
-            it.add((String)s);
-        }
-        return it.iterator();
-    }
-    
-    /*
-     * Pattern Matching (Commented by Alejandro and Johnathan)
-     */
-    public boolean patternMatching(Graph subGraph){
-        return false;
-    }
-    
-    /*
-     * Removes all the nodes of the graph
-     */
-    protected void removeAll(){
-        for (Object s : hg.getAll(graph, hg.type(String.class))){
-            graph.remove(graph.getHandle(s));
-        }
-    }
-    
-    /*
-     * Destructor of the class clase
-     */
-    protected void finalize(){
-        if(graph != null){
-            graph.close();
-        }
-    }
-    
-    /*
-     * Returns the in degree of nodeId
-     */
-    public Integer getInDegree(String nodeId){
-        HGSearchResult<HGHandle> rs;
-        HGHandle current;
-        HGValueLink a;
-        Integer res = new Integer(0);
-        HGHandle h = graph.getHandle(nodeId);
-        rs = graph.find(hg.incident(h));
-        
-        while (rs.hasNext()){
-            current = rs.next();
-            a = graph.get(current);
-            if(graph.get(a.getTargetAt(1)).equals(nodeId)){
-                res++;
-            }
-        }
-        return res;
-    }
-    
-    /*
-     * Returns the out degree of nodeId
-     */
-    public Integer getOutDegree(String nodeId){
-        HGSearchResult<HGHandle> rs;
-        HGHandle current;
-        HGValueLink a;
-        Integer res = new Integer(0);
-        HGHandle h = graph.getHandle(nodeId);
-        rs = graph.find(hg.incident(h));
-        
-        while (rs.hasNext()){
-            current = rs.next();
-            a = graph.get(current);
-            if(graph.get(a.getTargetAt(0)).equals(nodeId)){
-                res++;
-            }
-        }
-        return res;
-    }
-    
-    /*
-     * Testing
-     */
-    public static void main(String args[]){
-        HyperGraphDB graph = new HyperGraphDB();
-        
-        HGHandle h1, h2 , h3;
-        h1 = graph.addNode2("n1");
-        h2 = graph.addNode2("n2");
-        h3 = graph.addNode2("n3");
-        graph.addEdge(new Edge("lado1", "n1", "n2"));
-        graph.addEdge("lado2",h1, h3);
-        
-        Iterator<String> it = graph.adj("n1");
-        System.out.print("Sucesores de n1:");
-        while(it.hasNext()){
-            System.out.print(" "+it.next());
-        }System.out.print("\n");
-        
-        System.out.println("Grado de entrada de n1:"+graph.getInDegree("n1"));
-        System.out.println("Grado de salida de n1:"+graph.getOutDegree("n1"));
-        
-        it = graph.getNodes();
-        System.out.print("Todos los nodos:");
-        while(it.hasNext()){
-            System.out.print(" "+it.next());
-        }System.out.print("\n");
-        
-        Iterator<Edge> ite = graph.getEdges();
-        System.out.print("Todos los Arcos:");
-        while(ite.hasNext()){
-            System.out.print(" "+ite.next());
-        }System.out.print("\n");
-        
-        
-        
-    }
-    
+	public static HyperGraph graph = null; 
+	protected ArrayList<String> it;
+	protected ArrayList<Edge> ite;
+	protected String path = "graphs/DB/hypergraphdb";
+	protected int inccacheSize =  100000000;
+	protected int cacheSize =  1024  * 1024 * 1024;
+
+	/*
+	 * Graph Constructor
+	 */
+	public HyperGraphDB(){
+		this.V = 0;
+		this.E = 0;
+
+		HGConfiguration config = new HGConfiguration();
+		SequentialUUIDHandleFactory handleFactory = new SequentialUUIDHandleFactory(System.currentTimeMillis(), 0);
+		config.setHandleFactory(handleFactory);
+		config.setMaxCachedIncidenceSetSize(inccacheSize);
+		config.setSkipMaintenance(true);
+		config.setTransactional(false);
+		BJEConfig storeConfig = (BJEConfig) config.getStoreImplementation().getConfiguration();
+		storeConfig.getEnvironmentConfig().setCacheSize(cacheSize);
+
+		this.graph = HGEnvironment.get(path+"/prueba", config);        
+
+		this.removeAll();
+	}
+
+	/*
+	 * Graph Constructor. It receives the name of a file in sif format 
+	 * Removes the actual graph and create a new one
+	 */
+	public HyperGraphDB(String fileName) {
+
+		this.V = 0;
+		this.E = 0;
+
+		HGConfiguration config = new HGConfiguration();
+		SequentialUUIDHandleFactory handleFactory = new SequentialUUIDHandleFactory(System.currentTimeMillis(), 0);
+		config.setHandleFactory(handleFactory);
+		config.setMaxCachedIncidenceSetSize(inccacheSize);
+		config.setSkipMaintenance(true);
+		config.setTransactional(false);
+		BJEConfig storeConfig = (BJEConfig) config.getStoreImplementation().getConfiguration();
+		storeConfig.getEnvironmentConfig().setCacheSize(cacheSize);
+
+		this.graph = HGEnvironment.get(path+"/"+fileName, config);
+		this.removeAll();
+
+		readFile(fileName);
+	}
+
+	/*
+	 * Graph Constructor. Loads graph k in memory
+	 */
+	public HyperGraphDB(int k){
+		HGConfiguration config = new HGConfiguration();
+		SequentialUUIDHandleFactory handleFactory = new SequentialUUIDHandleFactory(System.currentTimeMillis(), 0);
+		config.setHandleFactory(handleFactory);
+		config.setMaxCachedIncidenceSetSize(inccacheSize);
+		config.setSkipMaintenance(true);
+		config.setTransactional(false);
+		BJEConfig storeConfig = (BJEConfig) config.getStoreImplementation().getConfiguration();
+		storeConfig.getEnvironmentConfig().setCacheSize(cacheSize);
+
+		this.graph = HGEnvironment.get(path+"/"+k, config);
+		init();
+		this.V = (int) V();
+		this.E = (int) E();
+
+	}
+
+	/*
+	 * Graph Constructor. It receive the name of a file in sif format 
+	 * It removes all nodes and creates the graph
+	 */
+	public HyperGraphDB(String fileName, int k) {
+
+		this.V = 0;
+		this.E = 0;
+
+		HGConfiguration config = new HGConfiguration();
+		SequentialUUIDHandleFactory handleFactory = new SequentialUUIDHandleFactory(System.currentTimeMillis(), 0);
+		config.setHandleFactory(handleFactory);
+		config.setMaxCachedIncidenceSetSize(inccacheSize);
+		config.setSkipMaintenance(true);
+		config.setTransactional(false);
+		BJEConfig storeConfig = (BJEConfig) config.getStoreImplementation().getConfiguration();
+		storeConfig.getEnvironmentConfig().setCacheSize(cacheSize);
+
+		this.graph = HGEnvironment.get(path+"/"+k, config);
+
+		this.removeAll();
+		readFile(fileName);
+		graph.getIndexManager().register(new ByTargetIndexer(graph.getTypeSystem().getTypeHandle(HGValueLink.class), 0));
+		graph.runMaintenance();
+	}
+
+	/*
+	 * Load the graph from filename in sif format
+	 */
+	protected void readFile(String fileName){
+		try{
+			File file = new File(fileName);
+			Scanner scanner = new Scanner(file);
+			int cur = 0, curSuc;
+			String edgeName = "", curName = "";
+			while (scanner.hasNextLine()) {
+				String[] line = scanner.nextLine().split("\t");
+				String[] suc = new String[line.length-2];
+				curName = line[0];
+				edgeName = line[1];
+				addNode(curName);
+				for(int i = 2; i < line.length; i++){
+					addNode(line[i]);
+					suc[i-2] = line[i];
+				}
+				addHyperEdge(edgeName, curName, suc);
+			}
+
+
+			scanner.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		Integer a = new Integer(this.E);
+		graph.add(a);
+
+
+	}
+
+
+	/*
+	 * Initializes V and E
+	 */
+	protected boolean init(){
+		HGesp e = graph.getOne(HGQuery.hg.type(HGesp.class));
+		this.V = (int)HGQuery.hg.count(graph, HGQuery.hg.and(HGQuery.hg.arity(0), HGQuery.hg.type(String.class)));
+		this.E = graph.getOne(HGQuery.hg.type(Integer.class));
+		System.out.println("Nodes: "+this.V +" Edges: " +  this.E);
+		return true;
+	}
+
+
+	/*
+	 * Return the number of nodes in graph
+	 */
+	public int V() {
+		if(V < 0){
+			init();
+		}
+		return V;
+	}
+
+	/*
+	 * Return the number of edges in graph
+	 */
+	public int E() {
+		if(E < 0){
+			init();
+		}
+		return E;
+	}
+
+	/*
+	 * Close graph
+	 */
+	public void close(){
+		if(graph != null){
+			graph.close();
+			graph = null;
+		}
+	}
+
+	/*
+	 * Destructor of class
+	 */
+	public void finalize(){
+		if(graph != null){
+			graph.close();
+			graph = null;
+		}
+	}
+
+
+	/*
+	 * Add an Hyperedge
+	 */
+	public boolean addHyperEdge(String edgename, String head, String[]suc){   
+		HGHandle[] arc = new HGHandle[suc.length+1];
+
+		arc[0] = getHandle(head);
+		for(int i = 0; i < suc.length; i++){
+			arc[i+1] = getHandle(suc[i]);
+		}
+
+		graph.add(new HGValueLink(new String("E"+edgename), arc));
+		this.E = this.E + suc.length;
+
+		return true;
+	}
+
+	/*
+	 * Adds a node to the graph
+	 */
+	public void addNode(String nodeId){
+		Object o = HGQuery.hg.addUnique(HyperGraphDB.graph, nodeId, HGQuery.hg.eq(nodeId));
+		if(o.getClass().getName().equals("org.hypergraphdb.handle.WeakHandle")){
+			this.V++;
+		}
+	}
+
+	/*
+	 * Adds an edge
+	 */
+	public boolean addEdge(Edge e){
+		HGHandle h1 = getHandle(e.getSrc());
+		HGHandle h2 = getHandle(e.getDst());
+		graph.add(new HGValueLink(e.getId(), h1, h2));
+		this.E++;
+		return true;
+	}
+
+	/*
+	 * Returns an iterator with the nodes adjacents to nodeId
+	 */
+	public Iterator<String> adj(String nodeId){
+		it = new ArrayList<String>();
+		HGHandle current = getHandle(nodeId);
+		HGValueLink a;
+		int tam;
+		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.incidentAt(current, 0))){
+			a = (HGValueLink)s;
+			tam = a.getArity();
+			for(int i = 1; i < tam; i++){
+				it.add((String)graph.get(a.getTargetAt(i)));
+			}
+		}
+		return it.iterator();
+	}
+
+	/*
+	 * Returns an iterator over the nodes adjacents to nodeId with the edgeName relId
+	 */
+	public Iterator<String> adj(String nodeId, String relId){
+		it = new ArrayList<String>();
+		HGHandle current = getHandle(nodeId);
+		HGValueLink a;
+		relId = "E"+relId;
+		int tam;
+		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.and(HGQuery.hg.incidentAt(current, 0), HGQuery.hg.eq(relId)))){
+			a = (HGValueLink)s;
+			tam = a.getArity();
+			for(int i = 1; i < tam; i++){
+				it.add((String)graph.get(a.getTargetAt(i)));
+			}
+		}
+		return it.iterator();
+	}
+
+	/*
+	 * It's the same that adjEdges
+	 */
+	public Iterator<String> edgeBetween(String src, String dst){
+		return adjEdges(src, dst);
+	}
+
+	/*
+	 * Given a node returns the handle of the node
+	 */
+	public HGHandle getHandle(String nodeId){
+		String s1 = graph.getOne(HGQuery.hg.and(HGQuery.hg.arity(0), HGQuery.hg.eq(nodeId), HGQuery.hg.type(String.class)));
+		return graph.getHandle(s1);
+	}
+
+	/*
+	 * Given a Handle returns the object
+	 */
+	public Object get(HGHandle h1){
+		return graph.get(h1);
+	}
+
+	/*
+	 * Returns true if exist an edge from n1 to n2 (Revisar)
+	 */
+	public boolean adjacents(String n1, String n2){
+		HGHandle h1, h2;
+		h1 = getHandle(n1);
+		h2 = getHandle(n2);
+		HGValueLink li = graph.getOne(HGQuery.hg.and(HGQuery.hg.incidentAt(h1, 0), HGQuery.hg.incident(h2)));
+		return li != null;
+	}
+
+	/*
+	 * Adjacent edges: set of labels of edges from x to y. 
+	 */
+	public Iterator<String> adjEdges(String n1, String n2){
+		HGHandle h1, h2;
+		HGValueLink a;
+		it = new ArrayList<String>();
+		h1 = getHandle(n1);
+		h2 = getHandle(n2);
+		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.and(HGQuery.hg.incidentAt(h1, 0), HGQuery.hg.incident(h2)))){
+			a = (HGValueLink) s;
+			it.add((String)a.getValue());
+		}
+		return it.iterator();
+	}
+
+	/*
+	 * Returns an iterator over all the edges of the graph
+	 */
+	public Iterator<Edge> getEdges(){
+		ite = new ArrayList<Edge>();
+		HGHandle h1, h2;
+		Edge e;
+		HGValueLink a;
+		Link li;
+		int tam;
+		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.and( HGQuery.hg.not(HGQuery.hg.arity(0)), HGQuery.hg.type(String.class) ))){
+			a = (HGValueLink) s;
+			h1 = a.getTargetAt(0);
+			tam = a.getArity();
+			String edgename = (String)a.getValue();
+			String head = (String)graph.get(h1);
+			for(int i = 1; i < tam; i++){
+				h2 = a.getTargetAt(i);
+				ite.add(new Edge(edgename, head, (String)graph.get(h2)));
+			}
+		}
+		return ite.iterator();
+	}
+
+	/*
+	 * Returns an iterator over all the nodes of the graph
+	 */
+	public Iterator<String> getNodes (){
+		it = new ArrayList<String>();
+		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.and(HGQuery.hg.arity(0), HGQuery.hg.type(String.class) ))){
+			it.add((String)s);
+		}
+		return it.iterator();
+	}
+
+	/*
+	 * Removes all the nodes of the graph
+	 */
+	protected void removeAll(){
+		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.and(HGQuery.hg.arity(0), HGQuery.hg.type(String.class) ))){
+			graph.remove(graph.getHandle(s));
+		}
+		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.type(HGesp.class) )){
+			graph.remove(graph.getHandle(s));
+		}
+	}
+
+	/*
+	 * Returns the in degree of nodeId
+	 */
+	public Integer getInDegree(String nodeId){
+		Integer res = new Integer(0);
+		HGHandle h = getHandle(nodeId);
+		res = (int)HGQuery.hg.count(graph, HGQuery.hg.and(
+					HGQuery.hg.not(HGQuery.hg.incidentAt(h, 0)), 
+					HGQuery.hg.incident(h)) 
+				);
+		return res;
+	}
+
+	/*
+	 * Returns the out degree of nodeId
+	 */
+	public Integer getOutDegree(String nodeId){
+		Integer res = new Integer(0);
+		HGHandle current = getHandle(nodeId);
+		HGValueLink a;
+		int tam;
+		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.incidentAt(current, 0))){
+			a = (HGValueLink)s;
+			tam = a.getArity();
+			res = res + (tam-1);
+		}
+		return res;
+	}
+
+	/*
+	 * Algorithm Depth first search
+	 * Returns true if dst is reachable from src
+	 */
+	public boolean dfs(String src, String dst){
+		if(src == dst) return true;
+		DefaultALGenerator algen = new DefaultALGenerator(graph);
+		algen.setReturnPreceeding(false);
+		HGTraversal traversal = new HGDepthFirstTraversal(getHandle(src), algen);
+		String v;
+		while (traversal.hasNext()){
+			Pair<HGHandle, HGHandle> next = traversal.next();
+			v = graph.get(next.getSecond());
+			if(dst.equals(v)) return true;
+		}
+		return false;
+	}
+
+	/*
+	 * Algorithm Breadth first search
+	 * Returns true if dst is reachable from src
+	 */
+	public boolean bfs(String src, String dst){
+		if(src == dst) return true;
+		DefaultALGenerator algen = new DefaultALGenerator(graph);
+		algen.setReturnPreceeding(false);
+		HGTraversal traversal = new HGBreadthFirstTraversal(getHandle(src), algen);
+		String v;
+		while (traversal.hasNext()){
+			Pair<HGHandle, HGHandle> next = traversal.next();
+			v = graph.get(next.getSecond());
+			if(dst.equals(v)) return true;
+
+		}
+		return false;
+	}
+
+  /*
+   * Returns an Iterator over all nodes that belongs
+   * to the 'k' hops of 'src' node.
+   */
+	public Iterator<String> kHops(String src, int k) {
+		ArrayList<String> nodeList = new ArrayList<String>();
+		return nodeList.iterator();
+	}
 }
 
 

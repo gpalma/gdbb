@@ -19,44 +19,55 @@
 package ve.usb.gdbb;
 
 public class Edge {
-    private String id;
-    private String src;
-    private String dst;
 
-    public Edge(String id, String src, String dst) {
-        this.id = id;
-        this.src = src;
-        this.dst = dst;
-    }
+	/* This class represents a relationship/edge
+	 * from node 'src' to node 'dst' with 
+	 * relationship id/type equal to 'id'.
+	 */
+	private String id;
+	private String src;
+	private String dst;
 
-    public String getDst() {
-        return dst;
-    }
+	// Constructor
+	public Edge(String id, String src, String dst) {
+		this.id = id;
+		this.src = src;
+		this.dst = dst;
+	}
 
-    public void setDst(String dst) {
-        this.dst = dst;
-    }
+	// 'src' setter
+	public void setSrc(String src) {
+		this.src = src;
+	}
 
-    public String getId() {
-        return id;
-    }
+	// 'src' getter
+	public String getSrc() {
+		return src;
+	}
 
-    public void setId(String id) {
-        this.id = id;
-    }
+	// 'id' setter
+	public void setId(String id) {
+		this.id = id;
+	}
 
-    public String getSrc() {
-        return src;
-    }
+	// 'id' getter
+	public String getId() {
+		return id;
+	}
 
-    public void setSrc(String src) {
-        this.src = src;
-    }
-    /*
-     * Returns the string representation of the edge
-     */
-    public String toString(){
-        return "([" + this.id + "] " + this.src + " " + this.dst+")";
-    }
+	// 'dst' setter
+	public void setDst(String dst) {
+		this.dst = dst;
+	}
+
+	// 'dst' getter
+	public String getDst() {
+		return dst;
+	}
+
+	//Returns the string representation of the edge
+	public String toString(){
+		return "([" + this.id + "] " + this.src + " " + this.dst+")";
+	}
 
 }

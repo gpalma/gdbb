@@ -16,21 +16,27 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 package ve.usb.gdbb;
+
 /*
- * Clase correccion, Graph Summarization retorna un conjunto de correcciones
+ * Correction Class used for the Graph
+ * Summarization algorithm: Graph Summ
+ * returns a set of corrections
  */
+
 public class Correction{
-    /* Constructor de la clase */
-    public Correction(){
-    }
-    /* Constructor de la clase */
-    public Correction(String a, String b, boolean bol){
-      this.u = a;
-      this.v = b;
-      this.pos = bol;
-    }
-    // Representan dos nodos;
-     public String u, v;
-   	// True si hay que agregarlo false si hay que quitar
-   	public boolean pos;
+
+	// This represents two nodes
+	public String u, v;
+	/* True if you have to add this,
+	 * False if the opposite
+	 */
+	public boolean pos;
+
+	public Correction(){}
+
+	public Correction(String a, String b, boolean bol){
+		this.u = a;
+		this.v = b;
+		this.pos = bol;
+	}
 }

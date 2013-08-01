@@ -20,23 +20,31 @@ package ve.usb.gdbb;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Scanner;
-import org.neo4j.cypher.javacompat.*;
+import java.util.*;
+
 import org.neo4j.graphdb.*;
-import org.neo4j.graphdb.index.*;
+import org.neo4j.graphdb.index.IndexHits;
+import org.neo4j.graphdb.index.Index;
+import org.neo4j.graphdb.index.IndexManager;
 import org.neo4j.graphdb.factory.*;
+import org.neo4j.graphdb.traversal.*;
+import org.neo4j.unsafe.batchinsert.*;
+import org.neo4j.index.lucene.unsafe.batchinsert.LuceneBatchInserterIndexProvider;
+import org.neo4j.cypher.javacompat.*;
+import org.neo4j.tooling.*;
+import org.neo4j.kernel.*;
+import org.neo4j.helpers.collection.*;
 
 public class Neo4j extends GraphDB {
 
-	private GraphDatabaseService graphDB;
-	private DynamicRelationshipType relType;
-	private IndexManager indexManager;
-	private Index<Node> nodesIdIndex;
-	private ArrayList<String> nodesId;
-	private ArrayList<Edge> rels;
+	public GraphDatabaseService graphDB;
+	public GlobalGraphOperations globalOP;
+	public IndexManager indexManager;
+	public Index<Node> nodesIdIndex;
+	public ArrayList<String> nodesId;
+	public ArrayList<Edge> rels;
+	private Transaction tx;
+	public String idNode = "idNode";
 
 	/*
 	 * Private Constructor
@@ -45,46 +53,130 @@ public class Neo4j extends GraphDB {
 	 */
 	private Neo4j(String fileName, String pathDB) {
 
-		this.graphDB = new GraphDatabaseFactory()
-				.newEmbeddedDatabaseBuilder(pathDB)
-				.newGraphDatabase();
-		indexManager = graphDB.index();
-		nodesIdIndex = indexManager.forNodes("ids");
-		relType =  DynamicRelationshipType.withName("isRelated");
+		graphDB = new GraphDatabaseFactory().
+				newEmbeddedDatabaseBuilder(pathDB).
+				setConfig(GraphDatabaseSettings.node_keys_indexable, idNode).
+				setConfig(GraphDatabaseSettings.node_auto_indexing, "true").
+				setConfig(GraphDatabaseSettings.relationship_auto_indexing, "true").
+				newGraphDatabase();
+		globalOP = GlobalGraphOperations.at(graphDB);
+		Iterator<Node> nodeIt = globalOP.getAllNodes().iterator();
+		nodeIt.next();
+		boolean newG = !nodeIt.hasNext();
+
 		this.nodesId = new ArrayList<String>();
 		this.rels = new ArrayList<Edge>();
 
-		try {
-			this.V = 0;
-			this.E = 0;
-			File file = new File(fileName);
-			Scanner scanner = new Scanner(file);
-			int pos;
-			String edgeName = "", curName = "";
-			while (scanner.hasNextLine()) {
-				pos = 0;
-				String[] line = scanner.nextLine().split("\t");
-				for (String i : line) {
-					if (pos == 0) {
-						if (!hasNode(i)) {
-							addNode(i);
+		if (newG) {
+			graphDB.shutdown();
+			
+			BatchInserter inserter = BatchInserters.inserter(pathDB);
+			BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
+			BatchInserterIndex indexBatch = indexProvider.
+				nodeIndex(idNode, MapUtil.stringMap("type","exact"));
+			indexBatch.setCacheCapacity(idNode, 5000000);
+
+			V = 0;
+			E = 0;
+
+			try {
+				File file = new File(fileName);
+				Scanner scanner = new Scanner(file);
+				int pos;
+				long src = 0, dst;
+				String edgeType = "", srcNode = "";
+				Map<String, Object> properties;
+				DynamicRelationshipType relType;
+				IndexHits<Long> hitSearch;
+
+				while (scanner.hasNextLine()) {
+					pos = 0;
+					String[] line = scanner.nextLine().split("\t");
+					for (String curNode : line) {
+						if (pos == 0) {
+							srcNode = curNode;
+							pos = 1;
+
+							hitSearch = indexBatch.get(idNode,srcNode);
+							if (hitSearch.size() == 0) {
+								properties = MapUtil.map(idNode,srcNode);
+								src = inserter.createNode(properties);
+								indexBatch.add(src, properties);
+								nodesId.add(srcNode);
+								V++;
+							} else {
+								src = hitSearch.getSingle();
+							}
+
+						} else if (pos == 1) {
+							edgeType = curNode;
+							pos = 2;
+						} else {
+
+							hitSearch = indexBatch.get(idNode,curNode);
+							if (hitSearch.size() == 0) {
+								properties = MapUtil.map(idNode,curNode);
+								dst = inserter.createNode(properties);
+								indexBatch.add(dst, properties);
+								nodesId.add(curNode);
+								V++;
+							} else {
+								dst = hitSearch.getSingle();
+							}
+
+							relType = DynamicRelationshipType.withName(edgeType);
+							inserter.createRelationship(src, dst, relType, null);
+							rels.add(new Edge(edgeType, srcNode, curNode));
+							E++;
 						}
-						curName = i;
-						pos = 1;
-					} else if (pos == 1) {
-						edgeName = i;
-						pos = 2;
-					} else {
-						if (!hasNode(i)) {
-							addNode(i);
-						}
-						addEdge(new Edge(edgeName, curName, i));
 					}
 				}
+				scanner.close();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} finally {
+				indexBatch.flush();
+				indexProvider.shutdown();
+				inserter.shutdown();
 			}
-			scanner.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+
+			// Load graph again
+			graphDB = new GraphDatabaseFactory().
+				newEmbeddedDatabaseBuilder(pathDB).
+				setConfig(GraphDatabaseSettings.node_keys_indexable, idNode).
+				setConfig(GraphDatabaseSettings.node_auto_indexing, "true").
+				setConfig(GraphDatabaseSettings.relationship_auto_indexing, "true").
+				newGraphDatabase();
+			globalOP = GlobalGraphOperations.at(graphDB);
+			indexManager = graphDB.index();
+			nodesIdIndex = indexManager.forNodes(idNode);
+
+		} else {
+
+			indexManager = graphDB.index();
+			nodesIdIndex = indexManager.forNodes(idNode);
+
+			Relationship newRel;
+			String node;
+			V = 0;
+			E = 0;
+
+			while(nodeIt.hasNext()) {
+				node = (String) nodeIt.next().getProperty(idNode);
+				nodesId.add(node);
+				V++;
+			}
+			
+			Iterator<Relationship> relIt = globalOP.getAllRelationships().iterator();
+			while(relIt.hasNext()) {
+				newRel = relIt.next();
+				rels.add(new Edge(
+					newRel.getType().name(),
+					(String) newRel.getStartNode().getProperty(idNode),
+					(String) newRel.getEndNode().getProperty(idNode)
+				));
+				E++;
+			}
 		}
 	}
 
@@ -92,8 +184,8 @@ public class Neo4j extends GraphDB {
 	 * Public graph constructor
 	 * Using a file to load the data.
 	 */
-	public Neo4j(String fileName) {
-		this(fileName, "Graphs/Neo4j/");
+	public Neo4j(String fileName, int posGraph) {
+		this(fileName, "graphs/DB/Neo4j/" + posGraph);
 	}
 
 	/*
@@ -101,9 +193,9 @@ public class Neo4j extends GraphDB {
 	 * (Empty Graph)
 	 */
 	public Neo4j() {
-		graphDB = new GraphDatabaseFactory().newEmbeddedDatabase("Graphs/Neo4j/");
-		nodesIdIndex = graphDB.index().forNodes("ids");
-		relType =  DynamicRelationshipType.withName("isRelated");
+		graphDB = new GraphDatabaseFactory().
+			newEmbeddedDatabase("graphs/DB/Neo4j/Default");
+		nodesIdIndex = graphDB.index().forNodes(idNode);
 	}
 
 	/*
@@ -112,9 +204,8 @@ public class Neo4j extends GraphDB {
 	 * False otherwise.
 	 */
 	private boolean hasNode(String nodeId) {
-		Node newNode = nodesIdIndex.get("idNode", nodeId).getSingle();
-		boolean exists = (newNode!=null);
-		return exists;
+		Node newNode = nodesIdIndex.get(idNode, nodeId).getSingle();
+		return (newNode!=null);
 	}
 
 	/*
@@ -126,11 +217,13 @@ public class Neo4j extends GraphDB {
 		if (!this.hasNode(edge.getSrc()) || !this.hasNode(edge.getDst()))
 			return false;
 
-		Node src = nodesIdIndex.get("idNode", edge.getSrc()).getSingle();
-		Node dst = nodesIdIndex.get("idNode", edge.getDst()).getSingle();
+		Node src = nodesIdIndex.get(idNode, edge.getSrc()).getSingle();
+		Node dst = nodesIdIndex.get(idNode, edge.getDst()).getSingle();
 
-		for (Relationship rel : src.getRelationships(this.relType)) {
-			if (rel.getOtherNode(src).equals(dst)) return true;
+		for (Relationship rel : src.getRelationships(Direction.OUTGOING)) {
+			if (rel.getOtherNode(src).equals(dst) &&
+				rel.getType().name().equals(edge.getId()))
+				return true;
 		}
 		return false;
 	}
@@ -141,18 +234,15 @@ public class Neo4j extends GraphDB {
 	public void addNode(String nodeId){
 
 		if (!hasNode(nodeId)) {
-			Transaction tx = graphDB.beginTx();
-			try
-			{
+			tx = graphDB.beginTx();
+			try {
 				Node newNode = graphDB.createNode();
-				newNode.setProperty("idNode", nodeId);
-				nodesIdIndex.add(newNode, "idNode", nodeId);
+				newNode.setProperty(idNode, nodeId);
+				nodesIdIndex.add(newNode, idNode, nodeId);
 				this.nodesId.add(nodeId);
 				this.V++;
 				tx.success();
-			}
-			finally
-			{
+			} finally {
 				tx.finish();
 			}
 		}
@@ -163,32 +253,30 @@ public class Neo4j extends GraphDB {
 	 */
 	public boolean addEdge(Edge e){
 		if (!hasEdge(e)) {
-			Node src = nodesIdIndex.get("idNode", e.getSrc()).getSingle();
-			Node dst = nodesIdIndex.get("idNode", e.getDst()).getSingle();
+			Node src = nodesIdIndex.get(idNode, e.getSrc()).getSingle();
+			Node dst = nodesIdIndex.get(idNode, e.getDst()).getSingle();
 
-			Transaction tx = graphDB.beginTx();
+			tx = graphDB.beginTx();
 			try {
 				if (src==null) {
 					src = graphDB.createNode();
-					src.setProperty("idNode", e.getSrc());						
-					nodesIdIndex.add(src, "idNode", e.getSrc());				
+					src.setProperty(idNode, e.getSrc());
+					nodesIdIndex.add(src, idNode, e.getSrc());
 					this.V++;
 				}
 				if (dst==null) { 
 					dst = graphDB.createNode();
-					dst.setProperty("idNode", e.getDst());						
-					nodesIdIndex.add(dst, "idNode", e.getDst());
+					dst.setProperty(idNode, e.getDst());
+					nodesIdIndex.add(dst, idNode, e.getDst());
 					this.V++;
 				}
 
-				relType = DynamicRelationshipType.withName("isRelated");
-				Relationship rel = src.createRelationshipTo(dst, relType);			
-				rel.setProperty("relationship-type", "isRelated");
+				DynamicRelationshipType relType = DynamicRelationshipType.withName(e.getId());
+				Relationship rel = src.createRelationshipTo(dst, relType);
 				this.rels.add(e);
 				this.E++;
 				tx.success();
-			}
-			finally {
+			} finally {
 				tx.finish();
 			}
 			return true;
@@ -201,23 +289,65 @@ public class Neo4j extends GraphDB {
 	 * nodes adjacents to 'nodeId'.
 	 */
 	public Iterator<String> adj(String nodeId) {
-		Node node = nodesIdIndex.get("idNode", nodeId).getSingle();
-		String QueryPM =
-			"START n=node(" + 
-			node.getId() + ") " +
-			"MATCH n-[]->m RETURN m.idNode";
-
-		ExecutionEngine engine = new ExecutionEngine(graphDB);
-		ExecutionResult result = engine.execute(QueryPM);
-
+		
 		ArrayList<String> adjNodeList = new ArrayList<String>();
+		Node node = nodesIdIndex.get(idNode, nodeId).getSingle();
+		if (node == null)
+			return adjNodeList.iterator();
 
-		for ( Map<String, Object> row : result ){
-			for ( Map.Entry<String, Object> column : row.entrySet() ){
-				adjNodeList.add(column.getValue().toString());
-			}
-		}
+		Iterator<Relationship> itAdjRel = node.getRelationships(Direction.OUTGOING).iterator();
+
+		while (itAdjRel.hasNext()) {
+			adjNodeList.add( (String)itAdjRel.next().getOtherNode(node).getProperty(idNode) );
+		} 
+		
 		return adjNodeList.iterator();
+	}
+
+	/*
+	 * Returns an iterator over all
+	 * nodes adjacents to 'nodeId' with 'relId' as connection.
+	 */
+	public Iterator<String> adj(String nodeId, String relId) {
+		
+		ArrayList<String> adjNodeList = new ArrayList<String>();
+		Node node = nodesIdIndex.get(idNode, nodeId).getSingle();
+		if (node == null)
+			return adjNodeList.iterator();
+
+		Iterator<Relationship> itAdjRel = node.getRelationships(Direction.OUTGOING).iterator();
+		Relationship rel;
+
+		while (itAdjRel.hasNext()) {
+			rel = itAdjRel.next();
+			if (rel.getType().name().equals(relId))
+				adjNodeList.add( (String)rel.getOtherNode(node).getProperty(idNode) );
+		} 
+		
+		return adjNodeList.iterator();
+	}
+
+	/*
+	 * Returns an iterator over all
+	 * edges that exist between 'srcId' and 'dstId'.
+	 */
+	public Iterator<String> edgeBetween(String srcId, String dstId) {
+		
+		ArrayList<String> edgeList = new ArrayList<String>();
+		Node srcNode = nodesIdIndex.get(idNode, srcId).getSingle();
+		if (srcNode == null)
+			return edgeList.iterator();
+
+		Iterator<Relationship> itAdjRel = srcNode.getRelationships(Direction.OUTGOING).iterator();
+		Relationship rel;
+
+		while (itAdjRel.hasNext()) {
+			rel = itAdjRel.next();
+			if (rel.getOtherNode(srcNode).getProperty(idNode).equals(dstId))
+				edgeList.add(rel.getType().name());
+		} 
+		
+		return edgeList.iterator();
 	}
 
 	/*
@@ -239,21 +369,19 @@ public class Neo4j extends GraphDB {
 	 * 'nodeId'. NULL otherwise.
 	 */
 	public Integer getInDegree(String nodeId) {
-		Node node = nodesIdIndex.get("idNode", nodeId).getSingle();
-		String QueryPM =
-			"START n=node(" + 
-			node.getId() + ") " +
-			"MATCH m-[]->n RETURN count(m)";
 
-		ExecutionEngine engine = new ExecutionEngine(graphDB);
-		ExecutionResult result = engine.execute(QueryPM);
+		Node node = nodesIdIndex.get(idNode, nodeId).getSingle();
+		if (node == null)
+			return null;
 
-		for ( Map<String, Object> row : result ){
-			for ( Map.Entry<String, Object> column : row.entrySet() ){
-				return (Integer.parseInt(column.getValue().toString()));
-			}
+		Iterator<Relationship> itAdjRel = node.getRelationships(Direction.INCOMING).iterator();
+		Integer inDegree = 0;
+		while (itAdjRel.hasNext()) {
+			inDegree++;
+			itAdjRel.next();
 		}
-		return null;
+		
+		return inDegree;
 	}
 
 	/*
@@ -261,58 +389,103 @@ public class Neo4j extends GraphDB {
 	 * 'nodeId'. NULL otherwise.
 	 */
 	public Integer getOutDegree (String nodeId) {
-		Node node = nodesIdIndex.get("idNode", nodeId).getSingle();
-		String QueryPM =
-			"START n=node(" + 
-			node.getId() + ") " +
-			"MATCH n-[]->m RETURN count(m)";
 
-		ExecutionEngine engine = new ExecutionEngine(graphDB);
-		ExecutionResult result = engine.execute(QueryPM);
+		Node node = nodesIdIndex.get(idNode, nodeId).getSingle();
+		if (node == null)
+			return null;
 
-		for ( Map<String, Object> row : result ){
-			for ( Map.Entry<String, Object> column : row.entrySet() ){
-				return (Integer.parseInt(column.getValue().toString()));
-			}
+		Iterator<Relationship> itAdjRel = node.getRelationships(Direction.OUTGOING).iterator();
+		Integer outDegree = 0;
+		while (itAdjRel.hasNext()) {
+			outDegree++;
+			itAdjRel.next();
 		}
-		return null;
+		
+		return outDegree;
 	}
-
-	/*
-	 * Receives the graph 'subGraph', and returns
-	 * True if the Graph DB finds a match inside
-	 * the graph it stores.
-	 */
-	public boolean patternMatching(Graph subGraph) {
-		Iterator<Edge> subGEdges = subGraph.getEdges();
-		if (!subGEdges.hasNext())
+	
+  /*
+   * Return TRUE if node 'dst' can be reached from
+   * using Depth First Search. FALSE otherwise.
+   */
+	public boolean dfs(String src, String dst) {
+		Node nodeS = nodesIdIndex.get(idNode, src).getSingle(),
+			 nodeD = nodesIdIndex.get(idNode, dst).getSingle();
+		if (nodeS == null || nodeD == null)
 			return false;
-		Edge curE = null;
-		String QueryPM = "";
-		while (subGEdges.hasNext()) {
-			curE = subGEdges.next();
-			QueryPM += 	"n_" + (curE.getSrc()) +
-				"-[]->n_" + (curE.getDst());
-			if (subGEdges.hasNext())
-				QueryPM += ",";
-		}
-		QueryPM = 	"START n_" + curE.getSrc() +
-			"=node(*) MATCH " + QueryPM +
-			" RETURN count(n_" + curE.getSrc() + ")";
-		ExecutionEngine engine = new ExecutionEngine(graphDB);
-		ExecutionResult result = engine.execute(QueryPM);
-
-		for ( Map<String, Object> row : result ){
-			for ( Map.Entry<String, Object> column : row.entrySet() ){
-				if (Integer.parseInt(column.getValue().toString())>0)
-					return true;
-			}
+		for (Node currentNode : Traversal
+			.description()
+			.depthFirst()
+			.expand(Traversal.expanderForAllTypes(Direction.OUTGOING))
+			.uniqueness(Uniqueness.NODE_GLOBAL)
+			.evaluator(
+				(Evaluator) Evaluators.endNodeIs(
+				Evaluation.INCLUDE_AND_CONTINUE,
+				Evaluation.EXCLUDE_AND_CONTINUE,
+				nodeD))
+			.traverse(nodeS)
+			.nodes())
+		{
+			if (currentNode.getProperty(idNode).equals(dst))
+				return true;
 		}
 		return false;
 	}
+	
+  /*
+   * Return TRUE if node 'dst' can be reached from
+   * using Breadth First Search. FALSE otherwise.
+   */
+	public boolean bfs(String src, String dst) {
+		Node nodeS = nodesIdIndex.get(idNode, src).getSingle(),
+			 nodeD = nodesIdIndex.get(idNode, dst).getSingle();
+		if (nodeS == null || nodeD == null)
+			return false;
+		for (Node currentNode : Traversal
+			.description()
+			.breadthFirst()
+			.expand(Traversal.expanderForAllTypes(Direction.OUTGOING))
+			.uniqueness(Uniqueness.NODE_GLOBAL)
+			.evaluator(
+				(Evaluator) Evaluators.endNodeIs(
+				Evaluation.INCLUDE_AND_CONTINUE,
+				Evaluation.EXCLUDE_AND_CONTINUE,
+				nodeD))
+			.traverse(nodeS)
+			.nodes())
+		{
+			if (currentNode.getProperty(idNode).equals(dst))
+				return true;
+		}
+		return false;
+	}
+	
+  /*
+   * Returns an Iterator over all nodes that belongs
+   * to the 'k' hops of 'src' node.
+   */
+	public Iterator<String> kHops(String src, int k) {
+		HashSet<String> nodeList = new HashSet<String>();
+		Node nodeS = nodesIdIndex.get(idNode, src).getSingle();
+		if (nodeS == null) { System.out.println("Hola");
+			return nodeList.iterator();}
+		for (Node currentNode : Traversal
+			.description()
+			.breadthFirst()
+			.expand(Traversal.expanderForAllTypes(Direction.OUTGOING))
+			.uniqueness(Uniqueness.NODE_LEVEL)
+			.evaluator( Evaluators.includingDepths(k,k) )
+			.traverse(nodeS)
+			.nodes())
+		{
+			nodeList.add((String)currentNode.getProperty(idNode));
+		}
+		return nodeList.iterator();
+	}
 
-	public Graph subGraph(int n) {
-		return null;
+	public ExecutionResult query (String QueryPM) {
+		ExecutionEngine engine = new ExecutionEngine(graphDB);
+		return engine.execute(QueryPM);
 	}
 	
 	public void close(){
@@ -325,4 +498,3 @@ public class Neo4j extends GraphDB {
 		}
 	}
 }
-

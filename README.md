@@ -1,0 +1,75 @@
+#Graphium
+**GDBB** | Graph DataBase Benchmark
+
+Welcome to *Graphium*, a suite of performance benchmarks for graph databases developed at Universidad Simón Bolívar, Caracas, Venezuela.
+
+[www.graphium.ldc.usb.ve](http://graphium.ldc.usb.ve)
+
+##Getting
+
+You can download this benchmark form GitHub by runing:
+
+    git clone git://github.com/gpalma/gdbb.git
+
+##Compiling
+
+First of all, place your self into the *Graphium* directory and compile the entire package:
+
+    make all
+
+You can compile only the tests for Neo4j, DEX or HyperGraphDB by runing `make Neo4j`, `make DEX` or `make HyperGraphDB` respectively. To clean delete the _.class_ files use `make clean`.
+
+##Running
+
+For running a test in the *Graphium* benchmark you must run:
+
+    ./run <GDBM> <TEST> <GRAPH_INDEX> [ <TEST_INDEX> ]
+
+Where `<GDBM>` must be `Neo4j`, `DEX` or `HyperGraphDB`, and `<TEST>` should be:
+
+- `Create`
+- `Load`
+- `DensestGraph`
+- `GraphSumm`
+- `Reachability`
+- `ShortPath`
+- `PatternMatching`
+
+Also, `<GRAPH_INDEX>` is one of:
+
+1. DSJC1000.1
+2. DSJC1000.5
+3. DSJC1000.9
+4. USA-road-d.NY
+5. USA-road-d.FLA
+6. SSCA2-17
+7. RANDOM-1M
+8. R-MAT-1M
+9. Random-0.3-1
+10. Random-0.3-5
+11. Random-0.3-9
+12. fixed-number-arcs-0.1
+13. fixed-number-arcs-0.5
+14. fixed-number-arcs-0.9
+15. Berlin10M
+16. Berlin5M
+
+Additionally, if you want to run a `Reachability` or `PatternMatching` test, you need a fourth parameter:
+Options for running `PatternMatching`, use the next as `<TEST_INDEX>` (a number in [0..8]):
+
+- `0` _for_ **AdjacentX**
+- `1` _for_ **AdjacentXP**
+- `2` _for_ **EdgeBetween**
+- `3` _for_ **External 2-Hop**
+- `4` _for_ **External 3-Hop**
+- `5` _for_ **External 4-Hop**
+- `6` _for_ **Internal 2-Hop**
+- `7` _for_ **Internal 3-Hop**
+- `8` _for_ **Internal 4-Hop**
+
+Options for running `Reachability`, use the next as `<TEST_INDEX>` (a number in [0..3]):
+
+- `0` _for_ **External BFS**
+- `1` _for_ **Internal BFS**
+- `2` _for_ **External DFS**
+- `3` _for_ **Internal DFS**

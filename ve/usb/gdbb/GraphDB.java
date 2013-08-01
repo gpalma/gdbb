@@ -28,7 +28,7 @@ import java.util.Queue;
 public abstract class GraphDB implements Graph {
 	protected int V;
 	protected int E;
-	
+
 	public int V() {
 		return V;
 	}
@@ -39,70 +39,34 @@ public abstract class GraphDB implements Graph {
 	public abstract void addNode(String nodeId);
 	public abstract boolean addEdge(Edge e);
 	public abstract Iterator<String> adj(String nodeId);
+	public abstract Iterator<String> adj(String nodeId, String relId);
+	public abstract Iterator<String> edgeBetween(String srcId, String dstId);
 	public abstract Iterator<Edge> getEdges();
 	public abstract Iterator<String> getNodes();
 	public abstract Integer getInDegree(String nodeId);
 	public abstract Integer getOutDegree(String nodeId);
-        
-        /*
-     * Funcion que retorna un subgrafo del grafo actual.
-     */
-        public Graph subGraph(int n) {
-            /* Choosing a random node, to generate
-                * a subgraph from it's BFS run
-                */
-            Iterator<Edge> iter = this.getEdges();
-            // This is not random FIX
-            Edge randomEdge = (Edge) iter.next();
-            String randomNode = randomEdge.getSrc();
-            int totalNodes = 1;
-            /* BFS run */
-            Graph subGraph = new DiGraphAdjList();
-            Queue<String> queue = new LinkedList<String>();
-            HashSet<String> visitedNodes = new HashSet<String>();
-            Iterator<String> adjActual;
-            String next;
-            String aux = randomNode;
-            queue.add(aux);
+	public abstract boolean bfs(String src, String dst);
+	public abstract boolean dfs(String src, String dst);
+	public abstract Iterator<String> kHops(String src, int k);
+	public abstract void close();
 
-            subGraph.addNode(aux);
-            visitedNodes.add(aux);
-
-            while(!queue.isEmpty() && totalNodes<n) {
-                    aux = queue.poll();
-                    adjActual = this.adj(aux);
-                    while(adjActual.hasNext()) {
-                            next = adjActual.next();
-                            if (!visitedNodes.contains(next) && totalNodes<n) {
-                                    queue.add(next);
-                                    subGraph.addNode(next);
-                                    visitedNodes.add(next);
-                                    subGraph.addEdge(new Edge(totalNodes+"", aux, next));
-                                    totalNodes++;
-                            }
-                    }
-            }
-
-        return subGraph;
-	}
-	
-	/*Funcion que,dado el String File, imprime en un archivo, cuyo nombre
-	 *sera File, el grafo en formato SIF*/
+	/* This function creates a file in 'sif' format
+	 * with the representation of the graph loaded
+	 * in this object.
+	 */
 	public void print(String File) {
-            try{
-                FileWriter fstream = new FileWriter(File);
-                BufferedWriter out = new BufferedWriter(fstream);
-                Iterator<Edge> archs = this.getEdges();
-                Edge curr;
-                while ( archs.hasNext() ) {
-                        curr = archs.next();
-                        out.write(curr.getSrc()+"\tpr\t"+curr.getDst()+"\n");
-                }
-                out.close();
-            }catch (Exception e){//Catch exception if any
-                System.err.println("Error: " + e.getMessage());
-            }
-        }
-	
-	public abstract boolean patternMatching(Graph subGraph);
+		try{
+			FileWriter fstream = new FileWriter(File);
+			BufferedWriter out = new BufferedWriter(fstream);
+			Iterator<Edge> archs = this.getEdges();
+			Edge curr;
+			while ( archs.hasNext() ) {
+				curr = archs.next();
+				out.write(curr.getSrc()+"\t"+curr.getId()+"\t"+curr.getDst()+"\n");
+			}
+			out.close();
+		}catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
+		}
+	}
 }

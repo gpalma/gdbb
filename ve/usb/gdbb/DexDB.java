@@ -18,205 +18,434 @@
 
 package ve.usb.gdbb;
 
+import com.sparsity.dex.algorithms.SinglePairShortestPathBFS;
+import com.sparsity.dex.algorithms.TraversalDFS;
+import com.sparsity.dex.algorithms.TraversalBFS;
 import com.sparsity.dex.gdb.*;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Scanner;
 
 public class DexDB extends GraphDB {
-    
-    DexConfig cfg;
-    Dex dex;
-    Database db;
-    Session sess;
-    com.sparsity.dex.gdb.Graph g;
-    int NodeType; //Node's ids
-    int NodeIdType; //Node Attribute's ids
-    int DirectsType; //Edge's ids
-    int DirectsIdType; //Edge Attribute's ids
 
-    public DexDB() {
-        try {
-            cfg = new DexConfig();
-            dex = new Dex(cfg);
-            db = dex.create("DexBD.dex", "DexBD");
-            sess = db.newSession();
-            g = sess.getGraph();
-            NodeType = g.newNodeType("NODE");
-            NodeIdType = g.newAttribute(NodeType, "ID", DataType.String, AttributeKind.Unique);
-            DirectsType = g.newRestrictedEdgeType("EDGE", NodeType, NodeType, false);
-            DirectsIdType = g.newAttribute(DirectsType, "ID", DataType.String, AttributeKind.Indexed);
-            
-        } catch (FileNotFoundException e){//Catch exception if any
-            System.err.println("Error: " + e.getMessage());
-        }
-    }
-    
-    public DexDB(String fileName) {
-        try {
-            this.V = 0;
-            this.E = 0;
-            cfg = new DexConfig();
-            dex = new Dex(cfg);
-            db = dex.create("DexBD.dex", "DexBD");
-            sess = db.newSession();
-            g = sess.getGraph();
-            NodeType = g.newNodeType("NODE");
-            NodeIdType = g.newAttribute(NodeType, "ID", DataType.String, AttributeKind.Unique);
-            DirectsType = g.newRestrictedEdgeType("EDGE", NodeType, NodeType, false);
-            DirectsIdType = g.newAttribute(DirectsType, "ID", DataType.String, AttributeKind.Indexed);
-            File file = new File(fileName);
-            Scanner scanner = new Scanner(file);
-            int pos;
-            String edgeName = "", curName = "";
-            while (scanner.hasNextLine()) {
-                pos = 0;
-                String[] line = scanner.nextLine().split("\t");
-                for (String i : line) {
-                    if (pos == 0) {
-                        addNode(i);
-                        curName = i;
-                        pos = 1;
-                    } else if (pos == 1) {
-                        edgeName = i;
-                        pos = 2;
-                    } else {
-                        addNode(i);
-                        addEdge(new Edge(edgeName, curName, i));
-                    }
-                }
-            }
-            scanner.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-    
-    private boolean hasNode(String nodeId) {
-        Value value = new Value();
-        return (g.findObject(NodeIdType, value.setString(nodeId)) != 0);
-    }
-    
-    public void addNode(String nodeId){
-        if ((!hasNode(nodeId))) {
-            Value value = new Value();
-            long mNode = g.newNode(NodeType);
-            g.setAttribute(mNode, NodeIdType, value.setString(nodeId));
-            V++;
-        }
-    }
-    
-    public boolean addEdge(Edge e) {
-        if (!hasNode(e.getSrc()) || !hasNode(e.getDst())) {
-            return false;
-        }
-        Value value = new Value();
-        long anEdge;
-        anEdge = g.newEdge(DirectsType,
-                g.findObject(NodeIdType, value.setString(e.getSrc())),
-                g.findObject(NodeIdType, value.setString(e.getDst())));
-        g.setAttribute(anEdge, DirectsIdType, value.setString(e.getId()));
-        E++;
-        return true;
-    }
-    
-    public Iterator<String> adj(String nodeId) {
-        Value value = new Value();
-        ArrayList<String> neighbors = new ArrayList<String>();
-        Objects adjacents = g.neighbors(g.findObject(NodeIdType, value.setString(nodeId)), DirectsType, EdgesDirection.Outgoing);
-        
-        ObjectsIterator it = adjacents.iterator();
-        while (it.hasNext()) {
-            long nodesId = it.next();
-            g.getAttribute(nodesId, NodeIdType, value);
-            neighbors.add(value.getString());
-        }
-        
-        adjacents.close();
-        it.close();
-        
-        return neighbors.iterator();
-    }
-    public Iterator<Edge> getEdges() {
-        Value value = new Value();
-        ArrayList<Edge> edges = new ArrayList<Edge>();
-        Objects ed = g.select(DirectsType);
-        String edgeId, srcId, dstId;
-        
-        ObjectsIterator it = ed.iterator();
-        while (it.hasNext()) {
-            long edgesId = it.next();
-            g.getAttribute(edgesId, DirectsIdType, value);
-            edgeId = value.getString();
-            EdgeData data = g.getEdgeData(edgesId);
-            g.getAttribute(data.getTail(), NodeIdType, value);
-            srcId = value.getString();
-            g.getAttribute(data.getHead(), NodeIdType, value);
-            dstId = value.getString();
-            edges.add(new Edge(edgeId, srcId, dstId));
-        }
-        
-        ed.close();
-        it.close();
-        
-        return edges.iterator();
-    }
-    public Iterator<String> getNodes() {
-        Value value = new Value();
-        ArrayList<String> nodeList = new ArrayList<String>();
-        Objects nodesAll = g.select(NodeType);
-        
-        ObjectsIterator it = nodesAll.iterator();
-        while (it.hasNext()) {
-            long nodesId = it.next();
-            g.getAttribute(nodesId, NodeIdType, value);
-            nodeList.add(value.getString());
-        }
-        
-        nodesAll.close();
-        it.close();
-        
-        return nodeList.iterator();
-    }
-    public Integer getInDegree(String nodeId) {
-        if (!hasNode(nodeId)) {
-            return null;
-        }
-        
-        Value value = new Value();
-        long nodesId = g.findObject(NodeIdType, value.setString(nodeId));
+	protected DexConfig cfg;
+	protected Dex dex;
+	protected Database db;
+	protected Session sess;
+	protected com.sparsity.dex.gdb.Graph g;
+	protected int NodeType; //Node's ids
+	protected int NodeIdType; //Node Attribute's ids
+	protected String path = "graphs/DB/dexdb/";
+  
+  /*
+	 * Constructor to create an empty graph.
+	 */
+	public DexDB() {
+		try {
+			cfg = new DexConfig();
+			cfg.setLicense("283TQ-RHXT2-Y5KNF-QP5VA");
+			dex = new Dex(cfg);
+			db = dex.create(path + "/DexBD.dex", "DexBD");
+			sess = db.newSession();
+			g = sess.getGraph();
+			NodeType = g.newNodeType("NODE");
+			NodeIdType = g.newAttribute(NodeType, "ID", DataType.String, AttributeKind.Unique);
 
-        return (int) g.degree(nodesId, DirectsType, EdgesDirection.Ingoing);
-    }
-    public Integer getOutDegree(String nodeId) {
-        if (!hasNode(nodeId)) {
-            return null;
-        }
-        
-        Value value = new Value();
-        long nodesId = g.findObject(NodeIdType, value.setString(nodeId));
+		} catch (FileNotFoundException e){//Catch exception if any
+			System.err.println("Error: " + e.getMessage());
+		}
+	}
+  
+  /*
+   * Constructor that loads a graph from the directory:
+   * ../graphs/DB/dexdb/N/DexDB.dex with N as a parameter.
+   */
+	public DexDB(int N) {
+		try {
+			cfg = new DexConfig();
+			cfg.setLicense("283TQ-RHXT2-Y5KNF-QP5VA");
+			dex = new Dex(cfg);
+			db = dex.open(path+ N +"/DexBD.dex", true);
+			sess = db.newSession();
+			g = sess.getGraph();
+			NodeType = g.findType("NODE");
+			NodeIdType = g.findAttribute(NodeType, "ID");
+			V = (int) g.countNodes();
+			E = (int) g.countEdges();
 
-        return (int) g.degree(nodesId, DirectsType, EdgesDirection.Outgoing);
-    }
+		} catch (FileNotFoundException e){//Catch exception if any
+			System.err.println("Error: " + e.getMessage());
+		}
+	}
+  
+  /*
+	 * Public graph constructor
+	 * Using a file to load the data.
+	 */
+	public DexDB(String fileName, int N) {
+		try {
+			cfg = new DexConfig();
+			cfg.setLicense("283TQ-RHXT2-Y5KNF-QP5VA");
+			dex = new Dex(cfg);
+			db = dex.create(path+ N +"/DexBD.dex", "DexBD");
+			sess = db.newSession();
+			g = sess.getGraph();
+			NodeType = g.newNodeType("NODE");
+			NodeIdType = g.newAttribute(NodeType, "ID", DataType.String, AttributeKind.Unique);
+			File file = new File(fileName);
+			Scanner scanner = new Scanner(file);
+			int pos;
+			String edgeName = "", curName = "";
+			while (scanner.hasNextLine()) {
+				pos = 0;
+				String[] line = scanner.nextLine().split("\t");
+				for (String i : line) {
+					if (pos == 0) {
+						addNode(i);
+						curName = i;
+						pos = 1;
+					} else if (pos == 1) {
+						edgeName = i;
+						pos = 2;
+					} else {
+						addNode(i);
+						addEdge(new Edge(edgeName, curName, i));
+					}
+				}
+			}
+			scanner.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
 
-    public boolean patternMatching(Graph subGraph) {
-        return false;
-    }
-    
-    public Graph subGraph(int n) {
-        return null;
-    }
-    
-    protected void finalize(){
-        if(sess != null){
-            sess.close();
-            db.close();
-            dex.close();
-        }
-    }
-    
+  /*
+	 * Returns True if node 'nodeId'
+	 * is stored in the graph.
+	 * False otherwise.
+	 */
+	private boolean hasNode(String nodeId) {
+		Value value = new Value();
+		return (g.findObject(NodeIdType, value.setString(nodeId)) != Objects.InvalidOID);
+	}
+
+  /*
+	 * Adds node 'nodeId' to the graph.
+	 */
+	public void addNode(String nodeId){
+		if ((!hasNode(nodeId))) {
+			Value value = new Value();
+			long mNode = g.newNode(NodeType);
+			g.setAttribute(mNode, NodeIdType, value.setString(nodeId));
+			V++;
+		}
+	}
+
+  /*
+	 * Adds edge 'e' to the graph.
+	 */
+	public boolean addEdge(Edge e) {
+		if (!hasNode(e.getSrc()) || !hasNode(e.getDst())) {
+			return false;
+		}
+		Value value = new Value();
+		int edge = g.findType(e.getId());
+		if (edge == Type.InvalidType) {
+			edge = g.newRestrictedEdgeType(e.getId(), NodeType, NodeType, true);
+		}
+		long src, dst;
+		src = g.findObject(NodeIdType, value.setString(e.getSrc()));
+		dst = g.findObject(NodeIdType, value.setString(e.getDst()));
+		g.newEdge(edge, src, dst);
+		E++;
+		return true;
+	}
+
+  /*
+	 * Returns an iterator over all
+	 * nodes adjacents to 'nodeId'.
+	 */
+	public Iterator<String> adj(String nodeId) {
+		Value value = new Value();
+		long node = g.findObject(NodeIdType, value.setString(nodeId));
+		ArrayList<String> neighborsNodes = new ArrayList<String>();
+		TypeList tlist = g.findEdgeTypes();
+		TypeListIterator listIt = tlist.iterator();
+		Objects adjacents = g.neighbors(node, listIt.nextType(), EdgesDirection.Outgoing);
+		Objects adjacents2;
+		while (listIt.hasNext()) {
+			adjacents2 = g.neighbors(node, listIt.nextType(), EdgesDirection.Outgoing);
+			adjacents.union(adjacents2);
+			adjacents2.close();
+		}
+
+		ObjectsIterator it = adjacents.iterator();
+		while (it.hasNext()) {
+			long nodesId = it.next();
+			g.getAttribute(nodesId, NodeIdType, value);
+			neighborsNodes.add(value.getString());
+		}
+		it.close();
+		adjacents.close();
+
+		return neighborsNodes.iterator();
+	}
+
+  /*
+	 * Returns an iterator over all
+	 * nodes adjacents to 'nodeId' with 'relId' as connection.
+	 */
+	public Iterator<String> adj(String nodeId, String relId) {
+		Value value = new Value();
+		ArrayList<String> labels = new ArrayList<String>();
+		int edgeTypeId = g.findType(relId);
+		if (edgeTypeId == Type.InvalidType) return labels.iterator();
+		Objects edges = g.explode(g.findObject(NodeIdType, value.setString(nodeId)),
+				edgeTypeId, EdgesDirection.Outgoing);
+		ObjectsIterator it = edges.iterator();
+		EdgeData data;
+		long edgeId;
+		while (it.hasNext()) {
+			edgeId = it.next();
+			data = g.getEdgeData(edgeId);
+			g.getAttribute(data.getHead(), NodeIdType, value);
+			labels.add(value.getString());
+		}
+		it.close();
+		edges.close();
+
+		return labels.iterator();
+	}
+
+  /*
+	 * Returns an iterator over all
+	 * edges that exist between 'srcId' and 'dstId'.
+	 */
+	public Iterator<String> edgeBetween(String srcId, String dstId) {
+		Value value = new Value();
+		long nodeSrc, nodeDst, edgeId;
+		int type;
+		ArrayList<String> labels = new ArrayList<String>();
+		TypeList tlist = g.findEdgeTypes();
+		TypeListIterator listIt = tlist.iterator();
+		nodeSrc = g.findObject(NodeIdType, value.setString(srcId));
+		nodeDst = g.findObject(NodeIdType, value.setString(dstId));
+		while(listIt.hasNext()) {
+			type = listIt.nextType();
+			edgeId = g.findEdge(type, nodeSrc, nodeDst);
+			if (edgeId != Objects.InvalidOID) {
+				labels.add(g.getType(type).getName());
+			}
+		}
+
+		return labels.iterator();
+	}
+
+  /*
+	 * Returns an iterator hover all edges.
+	 */
+	public Iterator<Edge> getEdges() {
+		Value value = new Value();
+		ArrayList<Edge> allEdges = new ArrayList<Edge>();
+		TypeList tlist = g.findEdgeTypes();
+		TypeListIterator listIt = tlist.iterator();
+		int type = listIt.nextType();
+		Objects edges = g.select(type);
+		ObjectsIterator it = edges.iterator();
+		String edgeName, srcId, dstId;
+		EdgeData data;
+		long edgeId;
+		while(it.hasNext()) {
+			edgeId = it.next();
+			data = g.getEdgeData(edgeId);
+			g.getAttribute(data.getHead(), NodeIdType, value);
+			dstId = value.getString();
+			g.getAttribute(data.getTail(), NodeIdType, value);
+			srcId = value.getString();
+			edgeName = g.getType(type).getName(); 
+			allEdges.add(new Edge(edgeName, srcId, dstId));
+		}
+		it.close();
+		edges.close();
+		while(listIt.hasNext()) {
+			type = listIt.nextType();
+			edges = g.select(type);
+			it = edges.iterator();
+			while(it.hasNext()) {
+				edgeId = it.next();
+				data = g.getEdgeData(edgeId);
+				g.getAttribute(data.getHead(), NodeIdType, value);
+				dstId = value.getString();
+				g.getAttribute(data.getTail(), NodeIdType, value);
+				srcId = value.getString();
+				edgeName = g.getType(type).getName(); 
+				allEdges.add(new Edge(edgeName, srcId, dstId));
+			}
+			it.close();
+			edges.close();
+		}
+
+		return allEdges.iterator();
+	}
+
+  /*
+	 * Returns an iterator hover all nodes.
+	 */
+	public Iterator<String> getNodes() {
+		Value value = new Value();
+		ArrayList<String> nodeList = new ArrayList<String>();
+		Objects nodesAll = g.select(NodeType);
+
+		ObjectsIterator it = nodesAll.iterator();
+		while (it.hasNext()) {
+			long nodesId = it.next();
+			g.getAttribute(nodesId, NodeIdType, value);
+			nodeList.add(value.getString());
+		}
+
+		nodesAll.close();
+		it.close();
+
+		return nodeList.iterator();
+	}
+
+  /*
+	 * Returns the InDegree of node
+	 * 'nodeId'. NULL otherwise.
+	 */
+	public Integer getInDegree(String nodeId) {
+		if (!hasNode(nodeId)) {
+			return null;
+		}
+
+		Value value = new Value();
+		long nodesId = g.findObject(NodeIdType, value.setString(nodeId));
+		TypeList tlist = g.findEdgeTypes();
+		TypeListIterator listIt = tlist.iterator();
+		long degree = 0;
+		while(listIt.hasNext()) {
+			degree += g.degree(nodesId, listIt.nextType(), EdgesDirection.Ingoing);
+		}
+
+		return (int) degree;
+	}
+
+  /*
+	 * Returns the OutDegree of node
+	 * 'nodeId'. NULL otherwise.
+	 */
+	public Integer getOutDegree(String nodeId) {
+		if (!hasNode(nodeId)) {
+			return null;
+		}
+
+		Value value = new Value();
+		long nodesId = g.findObject(NodeIdType, value.setString(nodeId));
+		TypeList tlist = g.findEdgeTypes();
+		TypeListIterator listIt = tlist.iterator();
+		long degree = 0;
+		while(listIt.hasNext()) {
+			degree += g.degree(nodesId, listIt.nextType(), EdgesDirection.Outgoing);
+		}
+
+		return (int) degree;
+	}
+
+  /*
+   * Return TRUE if node 'dst' can be reached from
+   * using Breadth First Search. FALSE otherwise.
+   */
+	public boolean bfs(String src, String dst) {
+		if(src == dst) return true;
+		Value value = new Value();
+		long curr, dstO;
+		boolean found = false;
+		dstO = g.findObject(NodeIdType, value.setString(dst));
+		TraversalBFS bfs = new TraversalBFS(sess, g.findObject(NodeIdType, value.setString(src)));
+		bfs.addAllEdgeTypes(EdgesDirection.Outgoing);
+		bfs.addAllNodeTypes();
+		while (bfs.hasNext() && !found) {
+			curr = bfs.next();
+			if (curr == dstO) found = true;
+		}
+		bfs.close();
+
+		return found;
+	}
+
+  /*
+   * Return TRUE if node 'dst' can be reached from
+   * using Depth First Search. FALSE otherwise.
+   */
+	public boolean dfs(String src, String dst) {
+		if(src == dst) return true;
+		Value value = new Value();
+		long curr, dstO;
+		boolean found = false;
+		dstO = g.findObject(NodeIdType, value.setString(dst));
+		TraversalDFS dfs = new TraversalDFS(sess, g.findObject(NodeIdType, value.setString(src)));
+		dfs.addAllEdgeTypes(EdgesDirection.Outgoing);
+		dfs.addAllNodeTypes();
+		while (dfs.hasNext() && !found) {
+			curr = dfs.next();
+			if (curr == dstO) found = true;
+		}
+		dfs.close();
+
+		return found;
+	}
+
+  /*
+   * Returns an Iterator over all nodes that belongs
+   * to the 'k' hops of 'src' node.
+   */
+	public Iterator<String> kHops(String src, int k) {
+		ArrayList<String> nodeList = new ArrayList<String>();
+		if (k <= 0) return nodeList.iterator();
+		Value value = new Value();
+		TypeList tlist = g.findEdgeTypes();
+		TypeListIterator listIt = tlist.iterator();
+		long srcId;
+		srcId = g.findObject(NodeIdType, value.setString(src));
+		Objects o1 = g.neighbors(srcId, listIt.nextType(), EdgesDirection.Outgoing);
+		Objects o2, aux;
+		while (listIt.hasNext()) {
+			aux = g.neighbors(srcId, listIt.nextType(), EdgesDirection.Outgoing);
+			o1.union(aux);
+			aux.close();
+		}
+		for (int i = 1; i < k; i++) {
+			o2 = o1.copy();
+			o1.close();
+			listIt = tlist.iterator();
+			o1 = g.neighbors(o2, listIt.nextType(), EdgesDirection.Outgoing);
+			while (listIt.hasNext()) {
+				aux = g.neighbors(o2, listIt.next(), EdgesDirection.Outgoing);
+				o1.union(aux);
+				aux.close();
+			}
+			o2.close();
+		}
+
+		ObjectsIterator it = o1.iterator();
+		while (it.hasNext()) {
+			long nodesId = it.next();
+			g.getAttribute(nodesId, NodeIdType, value);
+			nodeList.add(value.getString());
+		}
+
+		o1.close();
+		it.close();
+
+		return nodeList.iterator();
+	}
+
+	public void close(){
+		sess.close();
+		db.close();
+		dex.close();
+	}
+
 }

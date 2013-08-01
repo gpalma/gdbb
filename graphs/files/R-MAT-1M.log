@@ -1,0 +1,20 @@
+
+Graph Generator Parameters
+
+**************************
+n (vertices)		: 1000000
+m (arcs)		: 10000000
+a			: 0.450000
+b			: 0.150000
+c                       : 0.150000
+d                       : 0.250000
+SELF_LOOPS		: 0
+MAX_WEIGHT		: 100
+MIN_WEIGHT		: 0
+STORE_IN_MEMORY		: 1
+WRITE_TO_FILE		: 1
+SORT_EDGELISTS		: 0
+SORT_TYPE	        : 1
+OUTFILE			: sample.gr
+LOGFILE			: log
+

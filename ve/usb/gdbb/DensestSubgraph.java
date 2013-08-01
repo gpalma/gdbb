@@ -30,16 +30,32 @@ public class DensestSubgraph {
     private ArrayList<ArrayList<Integer>> predecessors;
     private Integer addedVertexs;
     
+    /* Comparator used to sort nodes by in degree by increasing order
+     */
     private class CustomComparatorInDegree implements Comparator<Integer> {
-        @Override
         public int compare(Integer o1, Integer o2) {
+            if (!validIn[o1].booleanValue() && validIn[o2].booleanValue()) {
+                return 1;
+            } else if (validIn[o1].booleanValue() && !validIn[o2].booleanValue()) {
+                return -1;
+            } else if (!validIn[o1].booleanValue() && !validIn[o2].booleanValue()) {
+                return 0;
+            }
             return inDegrees.get(o1).compareTo(inDegrees.get(o2));
         }
     }
     
+    /* Comparator used to sort nodes by out degree by increasing order
+     */
     private class CustomComparatorOutDegree implements Comparator<Integer> {
-        @Override
         public int compare(Integer o1, Integer o2) {
+            if (!validOut[o1].booleanValue() && validOut[o2].booleanValue()) {
+                return 1;
+            } else if (validOut[o1].booleanValue() && !validOut[o2].booleanValue()) {
+                return -1;
+            } else if (!validOut[o1].booleanValue() && !validOut[o2].booleanValue()) {
+                return 0;
+            }
             return outDegrees.get(o1).compareTo(outDegrees.get(o2));
         }
     }
@@ -47,14 +63,19 @@ public class DensestSubgraph {
     public DensestSubgraph(){
     }
     
+    /* Procedure that updates the predecessors of all nodes
+     * in the graph.
+     */
     private void initializePredecessors(Graph g) {
+        Iterator<String> itNodes = g.getNodes();
         Iterator<Edge> it = g.getEdges();
         Edge curEdge;
         this.addedVertexs = 0;
+        while (itNodes.hasNext()) {
+            addNode(itNodes.next());
+        }
         while (it.hasNext()) {
             curEdge = it.next();
-            addNode(curEdge.getSrc());
-            addNode(curEdge.getDst());
             predecessors.get(stringToIndex.get(curEdge.getDst()))
                     .add(stringToIndex.get(curEdge.getSrc()));
         }
@@ -69,8 +90,8 @@ public class DensestSubgraph {
         }
     }
     
-    /* Funcion que elimina todos los arcos en el grafo que llegan al vertice
-     * node.
+    /* Procedure that deletes all incoming edges from the node
+     * with "nodeIndex" as index.
      */
     protected void deleteIncoming(int nodeIndex) {
         ArrayList<Integer> pred = predecessors.get(nodeIndex);
@@ -84,8 +105,8 @@ public class DensestSubgraph {
         validIn[nodeIndex] = false;
     }
     
-    /* Funcion que elimina todos los arcos en el grafo que salen del vertice
-     * node.
+    /* Procedure that deletes all outgoing edges from the node
+     * with "nodeIndex" as index.
      */
     protected void deleteOutgoing(int nodeIndex, Graph g) {
         Iterator<String> it = g.adj(indexToString.get(nodeIndex));
@@ -99,13 +120,15 @@ public class DensestSubgraph {
         validOut[nodeIndex] = false;
     }
     
+    /* Function used to calculate the current density of the graph
+     */
     private double calculateDensity(Graph g) {
-      int EdgesST = 0;
+        int EdgesST = 0;
     	ArrayList<Integer> S = new ArrayList<Integer>();
     	ArrayList<Integer> T = new ArrayList<Integer>();
+        Iterator<String> it;
     	int sizeIn = inDegrees.size();
     	int sizeOut = outDegrees.size();
-        Adjacencies adj = new Adjacencies();
         
     	for ( int i = 0; i < sizeIn; i++ ) {
             if (validIn[i]) {
@@ -122,18 +145,21 @@ public class DensestSubgraph {
                 }
             }
     	}
-
-	int sizeS = S.size();
-	int sizeT = T.size();
-	for ( int x = 0; x < sizeS; x++ ) {
-            for ( int y = 0; y < sizeT; y++ ) {
-                if ( adj.adjNodesRestricted(g, 
-                    indexToString.get(S.get(x)), 
-                    indexToString.get(T.get(y)) )) {
+        
+	int sizeS = S.size(), curr, indexCurr;
+        
+        for (int i = 0; i < sizeS; i++) {
+            curr = S.get(i);
+            it = g.adj(indexToString.get(curr));
+            while (it.hasNext()) {
+                indexCurr = stringToIndex.get(it.next());
+                if(validIn[indexCurr]){
                     EdgesST++;
                 }
-            }		
-    	}
+            }
+        }
+        
+	int sizeT = T.size();
         
     	return sizeS*sizeT != 0 ? (EdgesST/Math.sqrt(sizeS*sizeT)) : 0.0;
     }
@@ -142,7 +168,7 @@ public class DensestSubgraph {
         ArrayList<Integer> indexIn = new ArrayList<Integer>();
         ArrayList<Integer> indexOut = new ArrayList<Integer>();
         Iterator<String> it = g.getNodes();
-        int i, j, vertexs, Vi, Vo, vertexsAll = g.V();
+        int i, j, vertexs, vertexsAll = g.V();
         double density, tmp;
         String cur;
         Boolean densestValidIn[] = new Boolean[vertexsAll];
@@ -160,16 +186,12 @@ public class DensestSubgraph {
         i = 0;
         while (it.hasNext()) {
             cur = it.next();
-            indexToString.add(cur);
             inDegrees.add(g.getInDegree(cur));
             outDegrees.add(g.getOutDegree(cur));
             indexIn.add(i);
             indexOut.add(i);
             i++;
         }
-        
-        Collections.sort(indexIn, new CustomComparatorInDegree());
-        Collections.sort(indexOut, new CustomComparatorOutDegree());
         
         for (int k = 0; k < vertexsAll; k++) {
             validIn[k] = true;
@@ -178,6 +200,9 @@ public class DensestSubgraph {
             densestValidOut[k] = true;
         }
         
+        Collections.sort(indexIn, new CustomComparatorInDegree());
+        Collections.sort(indexOut, new CustomComparatorOutDegree());
+        
         density = calculateDensity(g);
         
         i = 0;
@@ -185,18 +210,18 @@ public class DensestSubgraph {
         vertexs = 2*vertexsAll;
 	while ( vertexs > 0 ) {	
             if (i < vertexsAll && j < vertexsAll) {
-                if (inDegrees.get(i) <= outDegrees.get(j) ) {
-                    deleteIncoming(i);
+                if (inDegrees.get(indexIn.get(0)) <= outDegrees.get(indexOut.get(0)) ) {
+                    deleteIncoming(indexIn.get(0));
                     i++;
                 } else {
-                    deleteOutgoing(j, g);
+                    deleteOutgoing(indexOut.get(0), g);
                     j++;
                 }
             } else if (i < vertexsAll && j == vertexsAll) {
-                deleteIncoming(i);
+                deleteIncoming(indexIn.get(0));
                 i++;
             } else if (i == vertexsAll && j < vertexsAll) {
-                deleteOutgoing(j, g);
+                deleteOutgoing(indexOut.get(0), g);
                 j++;
             }
 
@@ -209,7 +234,8 @@ public class DensestSubgraph {
                     densestValidOut[k] = this.validOut[k];
                 }
             }
-
+            Collections.sort(indexIn, new CustomComparatorInDegree());
+            Collections.sort(indexOut, new CustomComparatorOutDegree());
             vertexs--;
 	}
 	

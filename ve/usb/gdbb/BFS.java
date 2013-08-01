@@ -16,19 +16,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/*
- * Reachability test functions implemented
- * with Breadth First Search algoritm (BFS).
- *
- * Implemented by
- * Alejandro Flores Velazco
- * Jonathan Queipo Andrade
- */
-
 package ve.usb.gdbb;
 
 import java.util.LinkedList;
 import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Queue;
 
@@ -40,10 +32,10 @@ public class BFS {
 	/*
 	 * Class used for the implementation of BFS's queue.
 	 */
-	private class Pair {
-		public String first;
+	private static class Pair<T> {
+    	public T first;
 		public int second;
-		Pair(String newFirst, int newSecond) {
+		Pair(T newFirst, int newSecond) {
 			first = newFirst;
 			second = newSecond;
 		}
@@ -62,7 +54,8 @@ public class BFS {
 	 * Using Breadth First Search algoritm (BFS).
 	 */
 	public boolean existsPath (String src, String dest) {
-		return runBFS(src, dest, graph.E());
+		Pair<Boolean> res = runBFS(src, dest, graph.E(), false);
+		return res.first;
 	}
 
 	/*
@@ -72,7 +65,19 @@ public class BFS {
 	 * Using Breadth First Search algoritm (BFS).
 	 */
 	public boolean existsPath (String src, String dest, int k) {
-		return runBFS(src, dest, k);
+		Pair<Boolean> res = runBFS(src, dest, k, false);
+		return (res.first && (res.second <= k));
+	}
+
+	/*
+	 * This function returns 'true' if dst is reachable from
+	 * scr with exactly k arcs between them. Returns 'false' if
+	 * the opposite.
+	 * Using Breadth First Search algoritm (BFS).
+	 */
+	public boolean kHops (String src, String dest, int k) {
+		Pair<Boolean> res = runBFS(src, dest, k, true);
+		return (res.first && (res.second == k));
 	}
 
 	/*
@@ -82,31 +87,63 @@ public class BFS {
 	 * 'false' if the opposite.
 	 * Using Breadth First Search algoritm (BFS).
 	 */
-	private boolean runBFS (String src, String dest, int k) {
+	private Pair<Boolean> runBFS (String src, String dest, int k, boolean exactly) {
 
-		Queue<Pair> queue = new LinkedList<Pair>();
+		Queue<Pair<String> > queue = new LinkedList<Pair<String> >();
 		visitedNodes = new HashSet<String>();
 		Iterator<String> adj;
 		String next;
-		Pair aux = new Pair(src, k);
+		Pair<String> aux = new Pair<String>(src, 0);
 		queue.add(aux);
 
 		while(!queue.isEmpty()) {
 			aux = queue.poll();
 			visitedNodes.add(aux.first);
-			if (aux.first.equals(dest)) {
-				return true;
+			if (aux.first.equals(dest) && (!exactly || aux.second==k)) {
+				return new Pair<Boolean>(true, aux.second);
 			}
-			if (aux.second > 0) {
+			if (aux.second < k) {
 				adj = this.graph.adj(aux.first);
 				while(adj.hasNext()) {
 					next = adj.next();
 					if (!visitedNodes.contains(next)) {
-						queue.add(new Pair(next, k-1));
+						queue.add(new Pair<String>(next, aux.second+1));
 					}
 				}
 			}
 		}
-		return false;
+		return new Pair<Boolean>(false, 0);
+	}
+
+	/* Returns an iterator over the list of
+	 * nodes that belongs to the k-Hop set
+	 * of node 'src'.
+	 */
+	public Iterator<String> kHopsNeighborhood (String src, int k) {
+
+		HashSet[] sets = new HashSet[2];
+		sets[0] = new HashSet<String>();
+		sets[1] = new HashSet<String>();
+		sets[0].add(src);
+		Iterator<String> hopN, adj;
+		int i = 0, j = 1, ind = 0;
+
+		while (ind < k) {
+
+			hopN = sets[i].iterator();
+			while(hopN.hasNext()) {
+				adj = this.graph.adj(hopN.next());
+				while (adj.hasNext())
+					sets[j].add(adj.next());
+			}
+
+			sets[i].clear();
+
+			i = (i==0 ? 1 : 0);
+			j = (j==0 ? 1 : 0);
+			ind++;
+		}
+
+		return sets[i].iterator();
 	}
 }

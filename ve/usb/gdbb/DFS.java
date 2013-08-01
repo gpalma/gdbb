@@ -16,15 +16,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/*
- * Reachability test functions implemented
- * with Depth First Search algoritm (DFS).
- *
- * Implemented by
- * Alejandro Flores Velazco
- * Jonathan Queipo Andrade
- */
-
 package ve.usb.gdbb;
 
 import java.util.LinkedList;
@@ -36,6 +27,18 @@ public class DFS {
 
 	private Graph graph;
 	private HashSet<String> visitedNodes;
+
+	/*
+	 * Class used for DFS's result.
+	 */
+	private static class Pair<T> {
+    	public T first;
+		public int second;
+		Pair(T newFirst, int newSecond) {
+			first = newFirst;
+			second = newSecond;
+		}
+	}
 	
 	public DFS(Graph newGraph) {
 		graph = newGraph;
@@ -51,7 +54,8 @@ public class DFS {
 	 */
 	public boolean existsPath(String src, String dest) {
 		visitedNodes = new HashSet<String>();
-		return runDFS(src, dest, graph.E());
+		Pair<Boolean> res = runDFS(src, dest, graph.E(), false);
+		return res.first;
 	}
 
 	/*
@@ -62,7 +66,20 @@ public class DFS {
 	 */
 	public boolean existsPath(String src, String dest, int k) {
 		visitedNodes = new HashSet<String>();
-		return runDFS(src, dest, k);
+		Pair<Boolean> res = runDFS(src, dest, k, false);
+		return (res.first && (res.second <= k));
+	}
+
+	/*
+	 * This function returns 'true' if dst is reachable from
+	 * scr with exactly k arcs between them. Returns 'false' if
+	 * the opposite.
+	 * Using Depth First Search algoritm (DFS).
+	 */
+	public boolean kHops (String src, String dest, int k) {
+		visitedNodes = new HashSet<String>();
+		Pair<Boolean> res = runDFS(src, dest, k, true);
+		return (res.first && (res.second == k));
 	}
 
 	/*
@@ -72,21 +89,22 @@ public class DFS {
 	 * 'false' if the opposite.
 	 * Using Depth First Search algoritm (DFS).
 	 */
-	private boolean runDFS(String src, String dest, int k) {
+	private Pair<Boolean> runDFS(String src, String dest, int k, boolean exactly) {
 		if (k < 0)
-			return false;
+			return new Pair<Boolean>(false, 0);
 		visitedNodes.add(src);
-		if (src.equals(dest))
-			return true;
+		if (src.equals(dest) && (!exactly || k==0))
+			return new Pair<Boolean>(true, k);
 		Iterator<String> adj = graph.adj(src);
-		boolean exists = false;
+		Pair<Boolean> res = new Pair<Boolean>(false, 0);
 		String next;
-		while (!exists && adj.hasNext()) {
+		while (!res.first && adj.hasNext()) {
 			next = adj.next();
 			if (!visitedNodes.contains(next)) {
-				exists = runDFS(next, dest, k-1);
+				res = runDFS(next, dest, k-1, exactly);	
+				res.second++;
 			}
 		}
-		return exists;
+		return res;
 	}
 }

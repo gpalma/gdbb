@@ -18,19 +18,22 @@
 package ve.usb.gdbb;
 
 /*
-* Class that allows diff a node of an edge into HyperGraphDB
-*/
-public class Link{
-    String s;
-    /*
-     * Constructor
-     */
-    public Link(){
-    }
-    /*
-     * Constructor
-     */
-    public Link(String w){
-       this.s = w;
-    }
+ * Class that allows diff a node 
+ * of an edge into HyperGraphDB
+ */
+public class Link {
+
+	protected String s;
+
+	// Constructor
+	public Link() {}
+
+	// Constructor
+	public Link(String w){
+		this.s = w;
+	}
+
+	public String toString(){
+		return s;
+	}
 }

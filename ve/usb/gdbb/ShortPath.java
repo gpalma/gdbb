@@ -19,8 +19,10 @@
 package ve.usb.gdbb;
 
 import java.util.ArrayList;
+import java.util.TreeSet;
 import java.util.Iterator;
 public class ShortPath {
+    TreeSet <String> resultado;
     
     /*
      * Constructor de la clase
@@ -36,7 +38,9 @@ public class ShortPath {
      */
     public ArrayList<String> getPath(Graph g, String v1, String v2) {
         ArrayList<String> res = new ArrayList<String>();
+        System.out.println(g.V());
         for(int i = 0; i < g.V(); i++){
+            
             if(DFScamino(g, 0, i, v1, v2, res)){
                 return res;
             }
@@ -87,6 +91,30 @@ public class ShortPath {
             if(DFS(g, i+1, cota, siguientes.next(), objetivo))
                 return true;
         return false;
+    }
+    
+    /*
+     * Return all nodes khops from src
+     */
+    public Iterator<String> khops(Graph g, String src, int k){
+        resultado = new TreeSet<String>();
+        DFS(g, 0, k, src);
+        return resultado.iterator();
+    }
+    
+    /*
+     * Funcion que realiza una busqueda con DFS usando una cota.
+     */
+    private boolean DFS(Graph g, int i, int cota, String actual){
+        if(i >= cota){
+            resultado.add(actual);
+            return true;
+        }
+        Iterator<String> siguientes = g.adj(actual);
+        while(siguientes.hasNext()){
+            DFS(g, i+1, cota, siguientes.next());
+        }
+        return true;
     }
     
     
