@@ -23,7 +23,7 @@ You can compile only the tests for Neo4j, DEX or HyperGraphDB by runing `make Ne
 
 For running a test in the *Graphium* benchmark you must run:
 
-    ./run <GDBM> <TEST> <GRAPH_INDEX> [ <TEST_INDEX> ]
+    ./run.sh <GDBM> <TEST> <GRAPH_INDEX> [ <TEST_INDEX> ]
 
 Where `<GDBM>` must be:
 
