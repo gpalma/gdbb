@@ -17,7 +17,7 @@ First of all, place your self into the *Graphium* directory and compile the enti
 
     make all
 
-You can compile only the tests for Neo4j, DEX or HyperGraphDB by runing `make Neo4j`, `make DEX` or `make HyperGraphDB` respectively. To delete the _.class_ files use `make clean`.
+You can compile only the tests for Neo4j, Neo4j with Cypher, DEX or HyperGraphDB by runing `make Neo4j`, `make Neo4jCypher`, `make DEX` or `make HyperGraphDB` respectively. To delete the _.class_ files use `make clean`.
 
 ##Running
 
