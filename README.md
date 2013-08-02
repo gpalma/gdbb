@@ -21,6 +21,8 @@ In order to compile just the core of the benchmark, run `make compile`. You can 
 
 ##Running
 
+First of all you need to uncompress the _.bz2_ files of each graph, located in `graphs/files`.
+
 For running a test in the *Graphium* benchmark you must run:
 
     ./run.sh <GDBM> <TEST> <GRAPH_INDEX> [ <TEST_INDEX> ]
