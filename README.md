@@ -17,7 +17,7 @@ First of all, place your self into the *Graphium* directory and compile the enti
 
     make all
 
-In order to compile just the core of the benchmark, run `make compile`. You can compile only the tests runners for Neo4j, Neo4j with Cypher, DEX or HyperGraphDB by runing `make Neo4j`, `make Neo4jCypher`, `make DEX` or `make HyperGraphDB` respectively. To delete the _.class_ files use `make clean`.
+In order to compile just the core of the benchmark, run `make compile`. You can compile only the test runners for Neo4j, Neo4j with Cypher, DEX or HyperGraphDB by runing `make Neo4j`, `make Neo4jCypher`, `make DEX` or `make HyperGraphDB` respectively. To delete the _.class_ files use `make clean`.
 
 ##Running
 
