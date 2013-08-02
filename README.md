@@ -17,7 +17,7 @@ First of all, place your self into the *Graphium* directory and compile the enti
 
     make all
 
-You can compile only the tests for Neo4j, DEX or HyperGraphDB by runing `make Neo4j`, `make DEX` or `make HyperGraphDB` respectively. To clean delete the _.class_ files use `make clean`.
+You can compile only the tests for Neo4j, DEX or HyperGraphDB by runing `make Neo4j`, `make DEX` or `make HyperGraphDB` respectively. To delete the _.class_ files use `make clean`.
 
 ##Running
 
@@ -25,7 +25,14 @@ For running a test in the *Graphium* benchmark you must run:
 
     ./run <GDBM> <TEST> <GRAPH_INDEX> [ <TEST_INDEX> ]
 
-Where `<GDBM>` must be `Neo4j`, `DEX` or `HyperGraphDB`, and `<TEST>` should be:
+Where `<GDBM>` must be:
+
+- `Neo4j`
+- `Neo4jCypher` ( _Neo4j_ using _Cypher Query Language_ )
+- `DEX`
+- `HyperGraphDB`
+
+And `<TEST>` should be:
 
 - `Create`
 - `Load`
@@ -37,22 +44,22 @@ Where `<GDBM>` must be `Neo4j`, `DEX` or `HyperGraphDB`, and `<TEST>` should be:
 
 Also, `<GRAPH_INDEX>` is one of:
 
-1. DSJC1000.1
-2. DSJC1000.5
-3. DSJC1000.9
-4. USA-road-d.NY
-5. USA-road-d.FLA
-6. SSCA2-17
-7. RANDOM-1M
-8. R-MAT-1M
-9. Random-0.3-1
-10. Random-0.3-5
-11. Random-0.3-9
-12. fixed-number-arcs-0.1
-13. fixed-number-arcs-0.5
-14. fixed-number-arcs-0.9
-15. Berlin10M
-16. Berlin5M
+- `1` _for_ DSJC1000.1
+- `2` _for_ DSJC1000.5
+- `3` _for_ DSJC1000.9
+- `4` _for_ USA-road-d.NY
+- `5` _for_ USA-road-d.FLA
+- `6` _for_ SSCA2-17
+- `7` _for_ RANDOM-1M
+- `8` _for_ R-MAT-1M
+- `9` _for_ Random-0.3-1
+- `10` _for_ Random-0.3-5
+- `11` _for_ Random-0.3-9
+- `12` _for_ fixed-number-arcs-0.1
+- `13` _for_ fixed-number-arcs-0.5
+- `14` _for_ fixed-number-arcs-0.9
+- `15` _for_ Berlin10M
+- `16` _for_ Berlin5M
 
 Additionally, if you want to run a `Reachability` or `PatternMatching` test, you need a fourth parameter:
 Options for running `PatternMatching`, use the next as `<TEST_INDEX>` (a number in [0..8]):
