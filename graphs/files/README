@@ -1,0 +1,8 @@
+Graph name	 		#Vertices	# Arcs		Density	Description
+=========================	=========	========	=======	===========
+Random-0.3-1.sif		2048		1257678		0.30	Random
+Random-0.3-2.sif		4096		5031936		0.30	Random
+Random-0.3-3.sif		8192		20130200	0.30	Random
+fixed-number-arcs-0.1.sif	10000		10000000	0.10	Random
+fixed-number-arcs-0.5.sif	4472		10000000	0.50	Random
+fixed-number-arcs-0.9.sif	3333		10000000	0.90	Random
