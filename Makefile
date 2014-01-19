@@ -6,7 +6,7 @@ NEO = lib/neo4j/concurrentlinkedhashmap-lru-1.3.1.jar:lib/neo4j/neo4j-lucene-ind
 LIBS = "./:$(HG):$(DEX):$(NEO)"
 FLAGS = -source 6 -nowarn -cp
 
-all: clean compile Neo4j Neo4jCypher DEX HyperGraphDB
+all: compile Neo4j DEX HyperGraphDB
 
 compile:
 	javac $(FLAGS) $(LIBS) ve/usb/gdbb/*.java
@@ -15,10 +15,6 @@ compile:
 Neo4j:
 	javac $(FLAGS) $(LIBS) experiment/Neo4j/creategraphs/*.java
 	javac $(FLAGS) $(LIBS) experiment/Neo4j/algorithms/*.java
-
-Neo4jCypher:
-	javac $(FLAGS) $(LIBS) experiment/Neo4jCypher/creategraphs/*.java
-	javac $(FLAGS) $(LIBS) experiment/Neo4jCypher/algorithms/*.java
 
 DEX:
 	javac $(FLAGS) $(LIBS) experiment/DEX/creategraphs/*.java
