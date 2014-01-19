@@ -3,7 +3,7 @@ HG="lib/hypergraphdb/je-5.0.34.jar:lib/hypergraphdb/hgdb-1.2.jar:lib/hypergraphd
 DEX="lib/dex/dexjava.jar"
 NEO="lib/neo4j/concurrentlinkedhashmap-lru-1.3.1.jar:lib/neo4j/neo4j-lucene-index-1.9.jar:lib/neo4j/geronimo-jta_1.1_spec-1.1.1.jar:lib/neo4j/neo4j-shell-1.9.jar:lib/neo4j/lucene-core-3.6.2.jar:lib/neo4j/neo4j-udc-1.9.jar:lib/neo4j/neo4j-cypher-1.9.jar:lib/neo4j/neo4j-graph-algo-1.9.jar:lib/neo4j/org.apache.servicemix.bundles.jline-0.9.94_1.jar:lib/neo4j/neo4j-graph-matching-1.9.jar:lib/neo4j/scala-library-2.10.0.jar:lib/neo4j/neo4j-jmx-1.9.jar:lib/neo4j/server-api-1.9.jar:lib/neo4j/neo4j-kernel-1.9.jar"
 LIBS="./:$HG:$DEX:$NEO"
-FLAGS="-Xms16240m -Xmx16240m -XX:PermSize=14240m -XX:MaxPermSize=14240m -XX:-UseGCOverheadLimit "
+FLAGS="-Xms15g -Xmx15g -XX:PermSize=15g -XX:MaxPermSize=15g -XX:-UseGCOverheadLimit "
 
 case $2 in
   "Create") 
