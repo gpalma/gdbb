@@ -38,16 +38,16 @@ public abstract class GraphDB implements Graph {
 
 	public abstract void addNode(String nodeId);
 	public abstract boolean addEdge(Edge e);
-	public abstract Iterator<String> adj(String nodeId);
-	public abstract Iterator<String> adj(String nodeId, String relId);
-	public abstract Iterator<String> edgeBetween(String srcId, String dstId);
-	public abstract Iterator<Edge> getEdges();
-	public abstract Iterator<String> getNodes();
+	public abstract GraphIterator<String> adj(String nodeId);
+	public abstract GraphIterator<String> adj(String nodeId, String relId);
+	public abstract GraphIterator<String> edgeBetween(String srcId, String dstId);
+	public abstract GraphIterator<Edge> getEdges();
+	public abstract GraphIterator<String> getNodes();
 	public abstract Integer getInDegree(String nodeId);
 	public abstract Integer getOutDegree(String nodeId);
 	public abstract boolean bfs(String src, String dst);
 	public abstract boolean dfs(String src, String dst);
-	public abstract Iterator<String> kHops(String src, int k);
+	public abstract GraphIterator<String> kHops(String src, int k);
 	public abstract void close();
 
 	/* This function creates a file in 'sif' format
@@ -58,13 +58,14 @@ public abstract class GraphDB implements Graph {
 		try{
 			FileWriter fstream = new FileWriter(File);
 			BufferedWriter out = new BufferedWriter(fstream);
-			Iterator<Edge> archs = this.getEdges();
+			GraphIterator<Edge> archs = this.getEdges();
 			Edge curr;
 			while ( archs.hasNext() ) {
 				curr = archs.next();
 				out.write(curr.getSrc()+"\t"+curr.getId()+"\t"+curr.getDst()+"\n");
 			}
 			out.close();
+			archs.close();
 		}catch (Exception e) {
 			System.err.println("Error: " + e.getMessage());
 		}
