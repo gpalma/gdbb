@@ -141,27 +141,27 @@ public class DiGraphAdjList implements Graph {
 	 * Returns an iterator over all
 	 * nodes adjacents to 'nodeId'.
 	 */
-	public Iterator<String> adj(String nodeId) {
+	public GraphIterator<String> adj(String nodeId) {
 		ArrayList<String> adjlist = new ArrayList<String>();
 		if (StoI.containsKey(nodeId)) {
 			for (Integer i : adj.get(StoI.get(nodeId)))
 				adjlist.add(ItoS.get(i));
 		}
-		return adjlist.iterator();
+		return new SimpleGraphIterator(adjlist);
 	}
 
 	/*
 	 * Function that returns an iterator over all edges in the graph.
 	 */
-	public Iterator<Edge> getEdges () {
-		return edges.iterator();
+	public GraphIterator<Edge> getEdges () {
+		return new SimpleGraphIterator(edges);
 	}
 
 	/*
 	 * Function that returns an iterator over all nodes in the graph.
 	 */
-	public Iterator<String> getNodes () {
-		return ItoS.iterator();
+	public GraphIterator<String> getNodes () {
+		return new SimpleGraphIterator(ItoS);
 	}
 
 	/*
@@ -208,7 +208,7 @@ public class DiGraphAdjList implements Graph {
    * Returns an Iterator over all nodes that belongs
    * to the 'k' hops of 'src' node.
    */
-	public Iterator<String> kHops(String src, int k) {
+	public GraphIterator<String> kHops(String src, int k) {
 		BFS bfsRun = new BFS(this);
 		return bfsRun.kHopsNeighborhood(src,k);
 	}
@@ -223,12 +223,13 @@ public class DiGraphAdjList implements Graph {
 		try{
 			FileWriter fstream = new FileWriter(File);
 			BufferedWriter out = new BufferedWriter(fstream);
-			Iterator<Edge> archs = this.getEdges();
+			GraphIterator<Edge> archs = this.getEdges();
 			Edge curr;
-			while ( archs.hasNext() ) {
+			while (archs.hasNext()) {
 				curr = archs.next();
 				out.write(curr.getSrc()+"\t"+curr.getId()+"\t"+curr.getDst()+"\n");
 			}
+			archs.close();
 			out.close();
 		}catch (Exception e) {
 			System.err.println("Error: " + e.getMessage());
