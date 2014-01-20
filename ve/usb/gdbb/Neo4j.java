@@ -41,8 +41,6 @@ public class Neo4j extends GraphDB {
 	public GlobalGraphOperations globalOP;
 	public IndexManager indexManager;
 	public Index<Node> nodesIdIndex;
-	public ArrayList<String> nodesId;
-	public ArrayList<Edge> rels;
 	private Transaction tx;
 	public String idNode = "idNode";
 
@@ -64,9 +62,6 @@ public class Neo4j extends GraphDB {
 		nodeIt.next();
 		boolean newG = !nodeIt.hasNext();
 
-		this.nodesId = new ArrayList<String>();
-		this.rels = new ArrayList<Edge>();
-
 		if (newG) {
 			graphDB.shutdown();
 			
@@ -74,7 +69,7 @@ public class Neo4j extends GraphDB {
 			BatchInserterIndexProvider indexProvider = new LuceneBatchInserterIndexProvider(inserter);
 			BatchInserterIndex indexBatch = indexProvider.
 				nodeIndex(idNode, MapUtil.stringMap("type","exact"));
-			indexBatch.setCacheCapacity(idNode, 5000000);
+			indexBatch.setCacheCapacity(idNode, 25000000);
 
 			V = 0;
 			E = 0;
@@ -102,7 +97,6 @@ public class Neo4j extends GraphDB {
 								properties = MapUtil.map(idNode,srcNode);
 								src = inserter.createNode(properties);
 								indexBatch.add(src, properties);
-								nodesId.add(srcNode);
 								V++;
 							} else {
 								src = hitSearch.getSingle();
@@ -118,7 +112,6 @@ public class Neo4j extends GraphDB {
 								properties = MapUtil.map(idNode,curNode);
 								dst = inserter.createNode(properties);
 								indexBatch.add(dst, properties);
-								nodesId.add(curNode);
 								V++;
 							} else {
 								dst = hitSearch.getSingle();
@@ -126,7 +119,6 @@ public class Neo4j extends GraphDB {
 
 							relType = DynamicRelationshipType.withName(edgeType);
 							inserter.createRelationship(src, dst, relType, null);
-							rels.add(new Edge(edgeType, srcNode, curNode));
 							E++;
 						}
 					}
@@ -138,6 +130,7 @@ public class Neo4j extends GraphDB {
 				indexBatch.flush();
 				indexProvider.shutdown();
 				inserter.shutdown();
+				System.gc();
 			}
 
 			// Load graph again
@@ -156,25 +149,15 @@ public class Neo4j extends GraphDB {
 			indexManager = graphDB.index();
 			nodesIdIndex = indexManager.forNodes(idNode);
 
-			Relationship newRel;
-			String node;
 			V = 0;
 			E = 0;
-
 			while(nodeIt.hasNext()) {
-				node = (String) nodeIt.next().getProperty(idNode);
-				nodesId.add(node);
+				nodeIt.next();
 				V++;
 			}
-			
 			Iterator<Relationship> relIt = globalOP.getAllRelationships().iterator();
 			while(relIt.hasNext()) {
-				newRel = relIt.next();
-				rels.add(new Edge(
-					newRel.getType().name(),
-					(String) newRel.getStartNode().getProperty(idNode),
-					(String) newRel.getEndNode().getProperty(idNode)
-				));
+				relIt.next();
 				E++;
 			}
 		}
@@ -239,7 +222,6 @@ public class Neo4j extends GraphDB {
 				Node newNode = graphDB.createNode();
 				newNode.setProperty(idNode, nodeId);
 				nodesIdIndex.add(newNode, idNode, nodeId);
-				this.nodesId.add(nodeId);
 				this.V++;
 				tx.success();
 			} finally {
@@ -273,7 +255,6 @@ public class Neo4j extends GraphDB {
 
 				DynamicRelationshipType relType = DynamicRelationshipType.withName(e.getId());
 				Relationship rel = src.createRelationshipTo(dst, relType);
-				this.rels.add(e);
 				this.E++;
 				tx.success();
 			} finally {
@@ -288,80 +269,56 @@ public class Neo4j extends GraphDB {
 	 * Returns an iterator over all
 	 * nodes adjacents to 'nodeId'.
 	 */
-	public Iterator<String> adj(String nodeId) {
-		
-		ArrayList<String> adjNodeList = new ArrayList<String>();
+	public GraphIterator<String> adj(String nodeId) {
 		Node node = nodesIdIndex.get(idNode, nodeId).getSingle();
 		if (node == null)
-			return adjNodeList.iterator();
-
-		Iterator<Relationship> itAdjRel = node.getRelationships(Direction.OUTGOING).iterator();
-
-		while (itAdjRel.hasNext()) {
-			adjNodeList.add( (String)itAdjRel.next().getOtherNode(node).getProperty(idNode) );
-		} 
-		
-		return adjNodeList.iterator();
+			return new Neo4jAdjIterator();
+		return new Neo4jAdjIterator(node.getRelationships(Direction.OUTGOING));
 	}
 
 	/*
 	 * Returns an iterator over all
 	 * nodes adjacents to 'nodeId' with 'relId' as connection.
 	 */
-	public Iterator<String> adj(String nodeId, String relId) {
-		
-		ArrayList<String> adjNodeList = new ArrayList<String>();
+	public GraphIterator<String> adj(String nodeId, String relId) {
 		Node node = nodesIdIndex.get(idNode, nodeId).getSingle();
 		if (node == null)
-			return adjNodeList.iterator();
-
-		Iterator<Relationship> itAdjRel = node.getRelationships(Direction.OUTGOING).iterator();
-		Relationship rel;
-
-		while (itAdjRel.hasNext()) {
-			rel = itAdjRel.next();
-			if (rel.getType().name().equals(relId))
-				adjNodeList.add( (String)rel.getOtherNode(node).getProperty(idNode) );
-		} 
-		
-		return adjNodeList.iterator();
+			return new Neo4jAdjIterator();
+		return new Neo4jAdjIterator(node.getRelationships(
+			DynamicRelationshipType.withName(relId),Direction.OUTGOING));
 	}
 
 	/*
 	 * Returns an iterator over all
 	 * edges that exist between 'srcId' and 'dstId'.
 	 */
-	public Iterator<String> edgeBetween(String srcId, String dstId) {
-		
+	public GraphIterator<String> edgeBetween(String srcId, String dstId) {
 		ArrayList<String> edgeList = new ArrayList<String>();
 		Node srcNode = nodesIdIndex.get(idNode, srcId).getSingle();
 		if (srcNode == null)
-			return edgeList.iterator();
-
+			return new SimpleGraphIterator(edgeList);
 		Iterator<Relationship> itAdjRel = srcNode.getRelationships(Direction.OUTGOING).iterator();
 		Relationship rel;
-
 		while (itAdjRel.hasNext()) {
 			rel = itAdjRel.next();
 			if (rel.getOtherNode(srcNode).getProperty(idNode).equals(dstId))
 				edgeList.add(rel.getType().name());
-		} 
-		
-		return edgeList.iterator();
+		}
+		return new SimpleGraphIterator(edgeList);
 	}
 
 	/*
 	 * Returns an iterator hover all edges.
 	 */
-	public Iterator<Edge> getEdges() {
-		return rels.iterator();
+	public GraphIterator<Edge> getEdges() {
+		return new Neo4jEdgeIterator(globalOP.getAllRelationships());
 	}
 
 	/*
 	 * Returns an iterator hover all nodes.
 	 */
-	public Iterator<String> getNodes () {
-		return nodesId.iterator();
+	public GraphIterator<String> getNodes () {
+		return new Neo4jNodeIterator(globalOP.getAllNodes());
 	}
 
 	/*
@@ -369,18 +326,15 @@ public class Neo4j extends GraphDB {
 	 * 'nodeId'. NULL otherwise.
 	 */
 	public Integer getInDegree(String nodeId) {
-
 		Node node = nodesIdIndex.get(idNode, nodeId).getSingle();
 		if (node == null)
 			return null;
-
 		Iterator<Relationship> itAdjRel = node.getRelationships(Direction.INCOMING).iterator();
 		Integer inDegree = 0;
 		while (itAdjRel.hasNext()) {
 			inDegree++;
 			itAdjRel.next();
 		}
-		
 		return inDegree;
 	}
 
@@ -389,18 +343,15 @@ public class Neo4j extends GraphDB {
 	 * 'nodeId'. NULL otherwise.
 	 */
 	public Integer getOutDegree (String nodeId) {
-
 		Node node = nodesIdIndex.get(idNode, nodeId).getSingle();
 		if (node == null)
 			return null;
-
 		Iterator<Relationship> itAdjRel = node.getRelationships(Direction.OUTGOING).iterator();
 		Integer outDegree = 0;
 		while (itAdjRel.hasNext()) {
 			outDegree++;
 			itAdjRel.next();
 		}
-		
 		return outDegree;
 	}
 	
@@ -464,23 +415,44 @@ public class Neo4j extends GraphDB {
    * Returns an Iterator over all nodes that belongs
    * to the 'k' hops of 'src' node.
    */
-	public Iterator<String> kHops(String src, int k) {
-		HashSet<String> nodeList = new HashSet<String>();
+	public GraphIterator<String> kHops(String src, int k) {
+		ArrayList<String> khop = new ArrayList<String>();
 		Node nodeS = nodesIdIndex.get(idNode, src).getSingle();
-		if (nodeS == null) { System.out.println("Hola");
-			return nodeList.iterator();}
-		for (Node currentNode : Traversal
+		if (nodeS == null)
+			return new SimpleGraphIterator(khop);
+		/*	return new Neo4jNodeIterator();
+		return new Neo4jNodeIterator(Traversal
 			.description()
 			.breadthFirst()
 			.expand(Traversal.expanderForAllTypes(Direction.OUTGOING))
 			.uniqueness(Uniqueness.NODE_LEVEL)
-			.evaluator( Evaluators.includingDepths(k,k) )
+			.evaluator(Evaluators.atDepth(k))
 			.traverse(nodeS)
-			.nodes())
-		{
-			nodeList.add((String)currentNode.getProperty(idNode));
+			.nodes());*/
+
+		HashSet[] sets = new HashSet[2];
+		sets[0] = new HashSet<Node>();
+		sets[1] = new HashSet<Node>();
+		sets[0].add(nodeS);
+		Iterator<Node> hopN;
+		Iterator<Relationship> adj;
+		int i = 0, j = 1, ind = 0;
+		while (ind < k) {
+			hopN = sets[i].iterator();
+			while(hopN.hasNext()) {
+				adj = (hopN.next()).getRelationships(Direction.OUTGOING).iterator();
+				while (adj.hasNext())
+					sets[j].add(adj.next().getEndNode());
+			}
+			sets[i].clear();
+			i = (i==0 ? 1 : 0);
+			j = (j==0 ? 1 : 0);
+			ind++;
 		}
-		return nodeList.iterator();
+		hopN = sets[i].iterator();
+		while(hopN.hasNext())
+			khop.add((String)(hopN.next().getProperty(idNode)));
+		return new SimpleGraphIterator(khop);
 	}
 
 	public ExecutionResult query (String QueryPM) {
@@ -496,5 +468,58 @@ public class Neo4j extends GraphDB {
 		if(graphDB != null){
 			graphDB.shutdown();
 		}
+	}
+
+
+	/* Iterator class for Neo4j Nodes */
+	public class Neo4jNodeIterator<String> implements GraphIterator<String> {
+		Iterator<Node> it = null;
+		public Neo4jNodeIterator() {}
+		public Neo4jNodeIterator(Iterable<Node> it_) {
+			it = it_.iterator();
+			it.next();
+		}
+		public boolean hasNext() {
+			return (it!=null && it.hasNext());
+		}
+		public String next() {
+			return (String) it.next().getProperty(idNode);
+		}
+		public void close() {}
+	}
+
+	/* Iterator class for Neo4j Nodes */
+	public class Neo4jAdjIterator<String> implements GraphIterator<String> {
+		Iterator<Relationship> it = null;
+		public Neo4jAdjIterator() {}
+		public Neo4jAdjIterator(Iterable<Relationship> it_) {
+			it = it_.iterator();
+		}
+		public boolean hasNext() {
+			return (it!=null && it.hasNext());
+		}
+		public String next() {
+			return (String) it.next().getEndNode().getProperty(idNode);
+		}
+		public void close() {}
+	}
+
+	/* Iterator class for Neo4j Edges */
+	public class Neo4jEdgeIterator<Object> implements GraphIterator<Object> {
+		Iterator<Relationship> it = null;
+		public Neo4jEdgeIterator() {}
+		public Neo4jEdgeIterator(Iterable<Relationship> it_) {
+			it = it_.iterator();
+		}
+		public boolean hasNext() {
+			return (it!=null && it.hasNext());
+		}
+		public Object next() {
+			Relationship current = it.next();
+			return (Object) new Edge((String) current.getType().name(),
+				(String) current.getStartNode().getProperty(idNode),
+				(String) current.getEndNode().getProperty(idNode));
+		}
+		public void close() {}
 	}
 }
