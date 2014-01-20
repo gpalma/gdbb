@@ -30,27 +30,28 @@ import org.hypergraphdb.algorithms.*;
 import org.hypergraphdb.util.Pair;
 import org.hypergraphdb.HGIndexManager;
 import org.hypergraphdb.indexing.*;
-
 import org.hypergraphdb.storage.bje.BJEConfig;
 import org.hypergraphdb.storage.bdb.BDBConfig;
 import java.util.List;
-public class HyperGraphDB extends GraphDB{
+
+public class HyperGraphDB extends GraphDB {
+
 	public static HyperGraph graph = null; 
 	protected ArrayList<String> it;
 	protected ArrayList<Edge> ite;
 	protected String path = "graphs/DB/hypergraphdb";
-	protected int inccacheSize =  100000000;
-	protected int cacheSize =  1024  * 1024 * 1024;
+	protected int inccacheSize = 100000000;
+	protected int cacheSize = 1024*1024*1024;
 
 	/*
 	 * Graph Constructor
 	 */
-	public HyperGraphDB(){
+	public HyperGraphDB() {
 		this.V = 0;
 		this.E = 0;
-
 		HGConfiguration config = new HGConfiguration();
-		SequentialUUIDHandleFactory handleFactory = new SequentialUUIDHandleFactory(System.currentTimeMillis(), 0);
+		SequentialUUIDHandleFactory handleFactory =
+			new SequentialUUIDHandleFactory(System.currentTimeMillis(), 0);
 		config.setHandleFactory(handleFactory);
 		config.setMaxCachedIncidenceSetSize(inccacheSize);
 		config.setSkipMaintenance(true);
@@ -58,8 +59,7 @@ public class HyperGraphDB extends GraphDB{
 		BJEConfig storeConfig = (BJEConfig) config.getStoreImplementation().getConfiguration();
 		storeConfig.getEnvironmentConfig().setCacheSize(cacheSize);
 
-		this.graph = HGEnvironment.get(path+"/prueba", config);        
-
+		this.graph = HGEnvironment.get(path+"/prueba", config);
 		this.removeAll();
 	}
 
@@ -73,7 +73,8 @@ public class HyperGraphDB extends GraphDB{
 		this.E = 0;
 
 		HGConfiguration config = new HGConfiguration();
-		SequentialUUIDHandleFactory handleFactory = new SequentialUUIDHandleFactory(System.currentTimeMillis(), 0);
+		SequentialUUIDHandleFactory handleFactory =
+			new SequentialUUIDHandleFactory(System.currentTimeMillis(), 0);
 		config.setHandleFactory(handleFactory);
 		config.setMaxCachedIncidenceSetSize(inccacheSize);
 		config.setSkipMaintenance(true);
@@ -90,9 +91,10 @@ public class HyperGraphDB extends GraphDB{
 	/*
 	 * Graph Constructor. Loads graph k in memory
 	 */
-	public HyperGraphDB(int k){
+	public HyperGraphDB(int k) {
 		HGConfiguration config = new HGConfiguration();
-		SequentialUUIDHandleFactory handleFactory = new SequentialUUIDHandleFactory(System.currentTimeMillis(), 0);
+		SequentialUUIDHandleFactory handleFactory =
+			new SequentialUUIDHandleFactory(System.currentTimeMillis(), 0);
 		config.setHandleFactory(handleFactory);
 		config.setMaxCachedIncidenceSetSize(inccacheSize);
 		config.setSkipMaintenance(true);
@@ -112,12 +114,11 @@ public class HyperGraphDB extends GraphDB{
 	 * It removes all nodes and creates the graph
 	 */
 	public HyperGraphDB(String fileName, int k) {
-
 		this.V = 0;
 		this.E = 0;
-
 		HGConfiguration config = new HGConfiguration();
-		SequentialUUIDHandleFactory handleFactory = new SequentialUUIDHandleFactory(System.currentTimeMillis(), 0);
+		SequentialUUIDHandleFactory handleFactory =
+			new SequentialUUIDHandleFactory(System.currentTimeMillis(), 0);
 		config.setHandleFactory(handleFactory);
 		config.setMaxCachedIncidenceSetSize(inccacheSize);
 		config.setSkipMaintenance(true);
@@ -129,7 +130,8 @@ public class HyperGraphDB extends GraphDB{
 
 		this.removeAll();
 		readFile(fileName);
-		graph.getIndexManager().register(new ByTargetIndexer(graph.getTypeSystem().getTypeHandle(HGValueLink.class), 0));
+		graph.getIndexManager().register(new ByTargetIndexer(
+			graph.getTypeSystem().getTypeHandle(HGValueLink.class), 0));
 		graph.runMaintenance();
 	}
 
@@ -154,17 +156,12 @@ public class HyperGraphDB extends GraphDB{
 				}
 				addHyperEdge(edgeName, curName, suc);
 			}
-
-
 			scanner.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-
 		Integer a = new Integer(this.E);
 		graph.add(a);
-
-
 	}
 
 
@@ -173,7 +170,8 @@ public class HyperGraphDB extends GraphDB{
 	 */
 	protected boolean init(){
 		HGesp e = graph.getOne(HGQuery.hg.type(HGesp.class));
-		this.V = (int)HGQuery.hg.count(graph, HGQuery.hg.and(HGQuery.hg.arity(0), HGQuery.hg.type(String.class)));
+		this.V = (int)HGQuery.hg.count(graph, HGQuery.hg.and(HGQuery.hg.arity(0),
+			HGQuery.hg.type(String.class)));
 		this.E = graph.getOne(HGQuery.hg.type(Integer.class));
 		System.out.println("Nodes: "+this.V +" Edges: " +  this.E);
 		return true;
@@ -262,7 +260,7 @@ public class HyperGraphDB extends GraphDB{
 	/*
 	 * Returns an iterator with the nodes adjacents to nodeId
 	 */
-	public Iterator<String> adj(String nodeId){
+	public GraphIterator<String> adj(String nodeId){
 		it = new ArrayList<String>();
 		HGHandle current = getHandle(nodeId);
 		HGValueLink a;
@@ -274,32 +272,34 @@ public class HyperGraphDB extends GraphDB{
 				it.add((String)graph.get(a.getTargetAt(i)));
 			}
 		}
-		return it.iterator();
+		return new SimpleGraphIterator(it);
 	}
 
 	/*
 	 * Returns an iterator over the nodes adjacents to nodeId with the edgeName relId
 	 */
-	public Iterator<String> adj(String nodeId, String relId){
+	public GraphIterator<String> adj(String nodeId, String relId){
 		it = new ArrayList<String>();
 		HGHandle current = getHandle(nodeId);
 		HGValueLink a;
 		relId = "E"+relId;
 		int tam;
-		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.and(HGQuery.hg.incidentAt(current, 0), HGQuery.hg.eq(relId)))){
+		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.and(
+			HGQuery.hg.incidentAt(current, 0), HGQuery.hg.eq(relId))))
+		{
 			a = (HGValueLink)s;
 			tam = a.getArity();
 			for(int i = 1; i < tam; i++){
 				it.add((String)graph.get(a.getTargetAt(i)));
 			}
 		}
-		return it.iterator();
+		return new SimpleGraphIterator(it);
 	}
 
 	/*
 	 * It's the same that adjEdges
 	 */
-	public Iterator<String> edgeBetween(String src, String dst){
+	public GraphIterator<String> edgeBetween(String src, String dst){
 		return adjEdges(src, dst);
 	}
 
@@ -307,7 +307,8 @@ public class HyperGraphDB extends GraphDB{
 	 * Given a node returns the handle of the node
 	 */
 	public HGHandle getHandle(String nodeId){
-		String s1 = graph.getOne(HGQuery.hg.and(HGQuery.hg.arity(0), HGQuery.hg.eq(nodeId), HGQuery.hg.type(String.class)));
+		String s1 = graph.getOne(HGQuery.hg.and(HGQuery.hg.arity(0),
+			HGQuery.hg.eq(nodeId), HGQuery.hg.type(String.class)));
 		return graph.getHandle(s1);
 	}
 
@@ -325,37 +326,42 @@ public class HyperGraphDB extends GraphDB{
 		HGHandle h1, h2;
 		h1 = getHandle(n1);
 		h2 = getHandle(n2);
-		HGValueLink li = graph.getOne(HGQuery.hg.and(HGQuery.hg.incidentAt(h1, 0), HGQuery.hg.incident(h2)));
+		HGValueLink li = graph.getOne(HGQuery.hg.and(
+			HGQuery.hg.incidentAt(h1, 0), HGQuery.hg.incident(h2)));
 		return li != null;
 	}
 
 	/*
 	 * Adjacent edges: set of labels of edges from x to y. 
 	 */
-	public Iterator<String> adjEdges(String n1, String n2){
+	public GraphIterator<String> adjEdges(String n1, String n2){
 		HGHandle h1, h2;
 		HGValueLink a;
 		it = new ArrayList<String>();
 		h1 = getHandle(n1);
 		h2 = getHandle(n2);
-		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.and(HGQuery.hg.incidentAt(h1, 0), HGQuery.hg.incident(h2)))){
+		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.and(
+			HGQuery.hg.incidentAt(h1, 0), HGQuery.hg.incident(h2))))
+		{
 			a = (HGValueLink) s;
 			it.add((String)a.getValue());
 		}
-		return it.iterator();
+		return new SimpleGraphIterator(it);
 	}
 
 	/*
 	 * Returns an iterator over all the edges of the graph
 	 */
-	public Iterator<Edge> getEdges(){
+	public GraphIterator<Edge> getEdges(){
 		ite = new ArrayList<Edge>();
 		HGHandle h1, h2;
 		Edge e;
 		HGValueLink a;
 		Link li;
 		int tam;
-		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.and( HGQuery.hg.not(HGQuery.hg.arity(0)), HGQuery.hg.type(String.class) ))){
+		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.and(
+			HGQuery.hg.not(HGQuery.hg.arity(0)), HGQuery.hg.type(String.class))))
+		{
 			a = (HGValueLink) s;
 			h1 = a.getTargetAt(0);
 			tam = a.getArity();
@@ -366,28 +372,32 @@ public class HyperGraphDB extends GraphDB{
 				ite.add(new Edge(edgename, head, (String)graph.get(h2)));
 			}
 		}
-		return ite.iterator();
+		return new SimpleGraphIterator(ite);
 	}
 
 	/*
 	 * Returns an iterator over all the nodes of the graph
 	 */
-	public Iterator<String> getNodes (){
+	public GraphIterator<String> getNodes() {
 		it = new ArrayList<String>();
-		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.and(HGQuery.hg.arity(0), HGQuery.hg.type(String.class) ))){
+		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.and(
+			HGQuery.hg.arity(0), HGQuery.hg.type(String.class))))
+		{
 			it.add((String)s);
 		}
-		return it.iterator();
+		return new SimpleGraphIterator(it);
 	}
 
 	/*
 	 * Removes all the nodes of the graph
 	 */
 	protected void removeAll(){
-		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.and(HGQuery.hg.arity(0), HGQuery.hg.type(String.class) ))){
+		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.and(
+			HGQuery.hg.arity(0), HGQuery.hg.type(String.class))))
+		{
 			graph.remove(graph.getHandle(s));
 		}
-		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.type(HGesp.class) )){
+		for (Object s : HGQuery.hg.getAll(graph, HGQuery.hg.type(HGesp.class))) {
 			graph.remove(graph.getHandle(s));
 		}
 	}
@@ -434,7 +444,7 @@ public class HyperGraphDB extends GraphDB{
 		while (traversal.hasNext()){
 			Pair<HGHandle, HGHandle> next = traversal.next();
 			v = graph.get(next.getSecond());
-			if(dst.equals(v)) return true;
+			if (dst.equals(v)) return true;
 		}
 		return false;
 	}
@@ -452,21 +462,17 @@ public class HyperGraphDB extends GraphDB{
 		while (traversal.hasNext()){
 			Pair<HGHandle, HGHandle> next = traversal.next();
 			v = graph.get(next.getSecond());
-			if(dst.equals(v)) return true;
-
+			if (dst.equals(v)) return true;
 		}
 		return false;
 	}
 
-  /*
-   * Returns an Iterator over all nodes that belongs
-   * to the 'k' hops of 'src' node.
-   */
-	public Iterator<String> kHops(String src, int k) {
+	/*
+	 * Returns an Iterator over all nodes that belongs
+	 * to the 'k' hops of 'src' node.
+	 */
+	public GraphIterator<String> kHops(String src, int k) {
 		ArrayList<String> nodeList = new ArrayList<String>();
-		return nodeList.iterator();
+		return new SimpleGraphIterator(nodeList);
 	}
 }
-
-
-
