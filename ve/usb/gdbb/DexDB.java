@@ -38,14 +38,16 @@ public class DexDB extends GraphDB {
 	protected int NodeType; //Node's ids
 	protected int NodeIdType; //Node Attribute's ids
 	protected String path = "graphs/DB/dexdb/";
+	// This licence is for research purpuse only (Expires 01/11/2013)
+	protected String licenceDEX = "WJ16D-KRC8W-NDPJN-QPN55";
   
-  /*
+	/*
 	 * Constructor to create an empty graph.
 	 */
 	public DexDB() {
 		try {
 			cfg = new DexConfig();
-			cfg.setLicense("283TQ-RHXT2-Y5KNF-QP5VA");
+			cfg.setLicense(licenceDEX);
 			dex = new Dex(cfg);
 			db = dex.create(path + "/DexBD.dex", "DexBD");
 			sess = db.newSession();
@@ -58,14 +60,14 @@ public class DexDB extends GraphDB {
 		}
 	}
   
-  /*
-   * Constructor that loads a graph from the directory:
-   * ../graphs/DB/dexdb/N/DexDB.dex with N as a parameter.
-   */
+	/*
+	 * Constructor that loads a graph from the directory:
+	 * ../graphs/DB/dexdb/N/DexDB.dex with N as a parameter.
+	 */
 	public DexDB(int N) {
 		try {
 			cfg = new DexConfig();
-			cfg.setLicense("283TQ-RHXT2-Y5KNF-QP5VA");
+			cfg.setLicense(licenceDEX);
 			dex = new Dex(cfg);
 			db = dex.open(path+ N +"/DexBD.dex", true);
 			sess = db.newSession();
@@ -80,15 +82,16 @@ public class DexDB extends GraphDB {
 		}
 	}
   
-  /*
+	/*
 	 * Public graph constructor
 	 * Using a file to load the data.
 	 */
 	public DexDB(String fileName, int N) {
 		try {
 			cfg = new DexConfig();
-			cfg.setLicense("283TQ-RHXT2-Y5KNF-QP5VA");
+			cfg.setLicense(licenceDEX);
 			dex = new Dex(cfg);
+			(new File(path + N)).mkdirs();
 			db = dex.create(path+ N +"/DexBD.dex", "DexBD");
 			sess = db.newSession();
 			g = sess.getGraph();
@@ -96,32 +99,38 @@ public class DexDB extends GraphDB {
 			NodeIdType = g.newAttribute(NodeType, "ID", DataType.String, AttributeKind.Unique);
 			File file = new File(fileName);
 			Scanner scanner = new Scanner(file);
-			int pos;
+			int pos, indT = 0;
 			String edgeName = "", curName = "";
+			sess.begin();
 			while (scanner.hasNextLine()) {
 				pos = 0;
 				String[] line = scanner.nextLine().split("\t");
 				for (String i : line) {
 					if (pos == 0) {
-						addNode(i);
 						curName = i;
 						pos = 1;
 					} else if (pos == 1) {
 						edgeName = i;
 						pos = 2;
 					} else {
-						addNode(i);
 						addEdge(new Edge(edgeName, curName, i));
+						indT++;
+						if (indT > 100000) {
+							sess.commit();
+							indT = 0;
+							sess.begin();
+						}
 					}
 				}
 			}
 			scanner.close();
+			sess.commit();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
 	}
 
-  /*
+	/*
 	 * Returns True if node 'nodeId'
 	 * is stored in the graph.
 	 * False otherwise.
@@ -131,7 +140,7 @@ public class DexDB extends GraphDB {
 		return (g.findObject(NodeIdType, value.setString(nodeId)) != Objects.InvalidOID);
 	}
 
-  /*
+	/*
 	 * Adds node 'nodeId' to the graph.
 	 */
 	public void addNode(String nodeId){
@@ -143,34 +152,39 @@ public class DexDB extends GraphDB {
 		}
 	}
 
-  /*
+	/*
 	 * Adds edge 'e' to the graph.
 	 */
 	public boolean addEdge(Edge e) {
-		if (!hasNode(e.getSrc()) || !hasNode(e.getDst())) {
-			return false;
+		long src, dst;
+		src = g.findObject(NodeIdType, (new Value()).setString(e.getSrc()));
+		if (src==Objects.InvalidOID) {
+			src = g.newNode(NodeType);
+			g.setAttribute(src, NodeIdType, (new Value()).setString(e.getSrc()));
+			V++;
 		}
-		Value value = new Value();
+		dst = g.findObject(NodeIdType, (new Value()).setString(e.getDst()));
+		if (dst==Objects.InvalidOID) {
+			dst = g.newNode(NodeType);
+			g.setAttribute(dst, NodeIdType, (new Value()).setString(e.getDst()));
+			V++;
+		}
 		int edge = g.findType(e.getId());
 		if (edge == Type.InvalidType) {
 			edge = g.newRestrictedEdgeType(e.getId(), NodeType, NodeType, true);
 		}
-		long src, dst;
-		src = g.findObject(NodeIdType, value.setString(e.getSrc()));
-		dst = g.findObject(NodeIdType, value.setString(e.getDst()));
 		g.newEdge(edge, src, dst);
 		E++;
 		return true;
 	}
 
-  /*
+	/*
 	 * Returns an iterator over all
 	 * nodes adjacents to 'nodeId'.
 	 */
-	public Iterator<String> adj(String nodeId) {
+	public GraphIterator<String> adj(String nodeId) {
 		Value value = new Value();
 		long node = g.findObject(NodeIdType, value.setString(nodeId));
-		ArrayList<String> neighborsNodes = new ArrayList<String>();
 		TypeList tlist = g.findEdgeTypes();
 		TypeListIterator listIt = tlist.iterator();
 		Objects adjacents = g.neighbors(node, listIt.nextType(), EdgesDirection.Outgoing);
@@ -180,50 +194,26 @@ public class DexDB extends GraphDB {
 			adjacents.union(adjacents2);
 			adjacents2.close();
 		}
-
-		ObjectsIterator it = adjacents.iterator();
-		while (it.hasNext()) {
-			long nodesId = it.next();
-			g.getAttribute(nodesId, NodeIdType, value);
-			neighborsNodes.add(value.getString());
-		}
-		it.close();
-		adjacents.close();
-
-		return neighborsNodes.iterator();
+		return new DEXNodeIterator(adjacents);
 	}
 
-  /*
+	/*
 	 * Returns an iterator over all
 	 * nodes adjacents to 'nodeId' with 'relId' as connection.
 	 */
-	public Iterator<String> adj(String nodeId, String relId) {
+	public GraphIterator<String> adj(String nodeId, String relId) {
 		Value value = new Value();
-		ArrayList<String> labels = new ArrayList<String>();
+		long node = g.findObject(NodeIdType, value.setString(nodeId));
 		int edgeTypeId = g.findType(relId);
-		if (edgeTypeId == Type.InvalidType) return labels.iterator();
-		Objects edges = g.explode(g.findObject(NodeIdType, value.setString(nodeId)),
-				edgeTypeId, EdgesDirection.Outgoing);
-		ObjectsIterator it = edges.iterator();
-		EdgeData data;
-		long edgeId;
-		while (it.hasNext()) {
-			edgeId = it.next();
-			data = g.getEdgeData(edgeId);
-			g.getAttribute(data.getHead(), NodeIdType, value);
-			labels.add(value.getString());
-		}
-		it.close();
-		edges.close();
-
-		return labels.iterator();
+		Objects adjacents = g.neighbors(node, edgeTypeId, EdgesDirection.Outgoing);
+		return new DEXNodeIterator(adjacents);
 	}
 
-  /*
+	/*
 	 * Returns an iterator over all
 	 * edges that exist between 'srcId' and 'dstId'.
 	 */
-	public Iterator<String> edgeBetween(String srcId, String dstId) {
+	public GraphIterator<String> edgeBetween(String srcId, String dstId) {
 		Value value = new Value();
 		long nodeSrc, nodeDst, edgeId;
 		int type;
@@ -239,79 +229,34 @@ public class DexDB extends GraphDB {
 				labels.add(g.getType(type).getName());
 			}
 		}
-
-		return labels.iterator();
+		return new SimpleGraphIterator(labels);
 	}
 
-  /*
+	/*
 	 * Returns an iterator hover all edges.
 	 */
-	public Iterator<Edge> getEdges() {
-		Value value = new Value();
-		ArrayList<Edge> allEdges = new ArrayList<Edge>();
+	public GraphIterator<Edge> getEdges() {
 		TypeList tlist = g.findEdgeTypes();
 		TypeListIterator listIt = tlist.iterator();
 		int type = listIt.nextType();
-		Objects edges = g.select(type);
-		ObjectsIterator it = edges.iterator();
-		String edgeName, srcId, dstId;
-		EdgeData data;
-		long edgeId;
-		while(it.hasNext()) {
-			edgeId = it.next();
-			data = g.getEdgeData(edgeId);
-			g.getAttribute(data.getHead(), NodeIdType, value);
-			dstId = value.getString();
-			g.getAttribute(data.getTail(), NodeIdType, value);
-			srcId = value.getString();
-			edgeName = g.getType(type).getName(); 
-			allEdges.add(new Edge(edgeName, srcId, dstId));
-		}
-		it.close();
-		edges.close();
-		while(listIt.hasNext()) {
+		Objects edges = g.select(type),edges2;
+		while (listIt.hasNext()) {
 			type = listIt.nextType();
-			edges = g.select(type);
-			it = edges.iterator();
-			while(it.hasNext()) {
-				edgeId = it.next();
-				data = g.getEdgeData(edgeId);
-				g.getAttribute(data.getHead(), NodeIdType, value);
-				dstId = value.getString();
-				g.getAttribute(data.getTail(), NodeIdType, value);
-				srcId = value.getString();
-				edgeName = g.getType(type).getName(); 
-				allEdges.add(new Edge(edgeName, srcId, dstId));
-			}
-			it.close();
-			edges.close();
+			edges2 = g.select(type);
+			edges.union(edges2);
+			edges2.close();
 		}
-
-		return allEdges.iterator();
+		return new DEXEdgeIterator(edges);
 	}
 
-  /*
+	/*
 	 * Returns an iterator hover all nodes.
 	 */
-	public Iterator<String> getNodes() {
-		Value value = new Value();
-		ArrayList<String> nodeList = new ArrayList<String>();
-		Objects nodesAll = g.select(NodeType);
-
-		ObjectsIterator it = nodesAll.iterator();
-		while (it.hasNext()) {
-			long nodesId = it.next();
-			g.getAttribute(nodesId, NodeIdType, value);
-			nodeList.add(value.getString());
-		}
-
-		nodesAll.close();
-		it.close();
-
-		return nodeList.iterator();
+	public GraphIterator<String> getNodes() {
+		return new DEXNodeIterator(g.select(NodeType));
 	}
 
-  /*
+	/*
 	 * Returns the InDegree of node
 	 * 'nodeId'. NULL otherwise.
 	 */
@@ -319,7 +264,6 @@ public class DexDB extends GraphDB {
 		if (!hasNode(nodeId)) {
 			return null;
 		}
-
 		Value value = new Value();
 		long nodesId = g.findObject(NodeIdType, value.setString(nodeId));
 		TypeList tlist = g.findEdgeTypes();
@@ -328,11 +272,10 @@ public class DexDB extends GraphDB {
 		while(listIt.hasNext()) {
 			degree += g.degree(nodesId, listIt.nextType(), EdgesDirection.Ingoing);
 		}
-
 		return (int) degree;
 	}
 
-  /*
+	/*
 	 * Returns the OutDegree of node
 	 * 'nodeId'. NULL otherwise.
 	 */
@@ -353,10 +296,10 @@ public class DexDB extends GraphDB {
 		return (int) degree;
 	}
 
-  /*
-   * Return TRUE if node 'dst' can be reached from
-   * using Breadth First Search. FALSE otherwise.
-   */
+	/*
+	 * Return TRUE if node 'dst' can be reached from
+	 * using Breadth First Search. FALSE otherwise.
+	 */
 	public boolean bfs(String src, String dst) {
 		if(src == dst) return true;
 		Value value = new Value();
@@ -375,10 +318,10 @@ public class DexDB extends GraphDB {
 		return found;
 	}
 
-  /*
-   * Return TRUE if node 'dst' can be reached from
-   * using Depth First Search. FALSE otherwise.
-   */
+	/*
+	 * Return TRUE if node 'dst' can be reached from
+	 * using Depth First Search. FALSE otherwise.
+	 */
 	public boolean dfs(String src, String dst) {
 		if(src == dst) return true;
 		Value value = new Value();
@@ -397,13 +340,14 @@ public class DexDB extends GraphDB {
 		return found;
 	}
 
-  /*
-   * Returns an Iterator over all nodes that belongs
-   * to the 'k' hops of 'src' node.
-   */
-	public Iterator<String> kHops(String src, int k) {
+	/*
+	 * Returns an Iterator over all nodes that belongs
+	 * to the 'k' hops of 'src' node.
+	 */
+	public GraphIterator<String> kHops(String src, int k) {
 		ArrayList<String> nodeList = new ArrayList<String>();
-		if (k <= 0) return nodeList.iterator();
+		if (k <= 0)
+			return new SimpleGraphIterator(nodeList);
 		Value value = new Value();
 		TypeList tlist = g.findEdgeTypes();
 		TypeListIterator listIt = tlist.iterator();
@@ -439,13 +383,64 @@ public class DexDB extends GraphDB {
 		o1.close();
 		it.close();
 
-		return nodeList.iterator();
+		return new SimpleGraphIterator(nodeList);
 	}
 
 	public void close(){
 		sess.close();
 		db.close();
 		dex.close();
+	}
+
+	/* Iterator class for DEX Nodes */
+	public class DEXNodeIterator<Object> implements GraphIterator<Object> {
+		Objects sel;
+		ObjectsIterator it;
+		public DEXNodeIterator(Objects sel_) {
+			sel = sel_;
+			it = sel.iterator();
+		}
+		public boolean hasNext() {
+			return it.hasNext();
+		}
+		public Object next() {
+			long node = it.next();
+			Value value = new Value();
+			g.getAttribute(node, NodeIdType, value);
+			return (Object)value.getString();
+		}
+		public void close() {
+			it.close();
+			sel.close();
+		}
+	}
+
+	/* Iterator class for DEX Nodes */
+	public class DEXEdgeIterator<Object> implements GraphIterator<Object> {
+		Objects sel;
+		ObjectsIterator it;
+		public DEXEdgeIterator(Objects sel_) {
+			sel = sel_;
+			it = sel.iterator();
+		}
+		public boolean hasNext() {
+			return it.hasNext();
+		}
+		public Object next() {
+			long edgeId = it.next();
+			Value value = new Value();
+			EdgeData data = g.getEdgeData(edgeId);
+			g.getAttribute(data.getHead(), NodeIdType, value);
+			String dstId = value.getString();
+			g.getAttribute(data.getTail(), NodeIdType, value);
+			String srcId = value.getString();
+			String edgeName = g.getType(g.getObjectType(edgeId)).getName();
+			return (Object)new Edge(edgeName, srcId, dstId);
+		}
+		public void close() {
+			it.close();
+			sel.close();
+		}
 	}
 
 }
