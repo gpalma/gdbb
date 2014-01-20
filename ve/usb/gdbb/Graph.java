@@ -21,20 +21,20 @@ package ve.usb.gdbb;
 import java.util.Iterator;
 
 public interface Graph {
-    
-    public int V();
-    public int E();
-    public void addNode(String nodeId);
-    public boolean addEdge(Edge e);
-    public Iterator<String> adj(String nodeId);
-    public Iterator<Edge> getEdges ();
-    public Iterator<String> getNodes ();
-    public Integer getInDegree (String nodeId);
-    public Integer getOutDegree (String nodeId);
+
+	public int V();
+	public int E();
+	public void addNode(String nodeId);
+	public boolean addEdge(Edge e);
+	public GraphIterator<String> adj(String nodeId);
+	public GraphIterator<Edge> getEdges();
+	public GraphIterator<String> getNodes();
+	public Integer getInDegree (String nodeId);
+	public Integer getOutDegree (String nodeId);
 	public boolean bfs(String src, String dst);
 	public boolean dfs(String src, String dst);
-	public Iterator<String> kHops(String src, int k);
-    public void print(String File);
-    public void close();
+	public GraphIterator<String> kHops(String src, int k);
+	public void print(String File);
+	public void close();
 
 }
