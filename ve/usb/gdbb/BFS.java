@@ -54,7 +54,7 @@ public class BFS {
 	 * Using Breadth First Search algoritm (BFS).
 	 */
 	public boolean existsPath (String src, String dest) {
-		Pair<Boolean> res = runBFS(src, dest, graph.E(), false);
+		Pair<Boolean> res = runBFS(src, dest, graph.E());
 		return res.first;
 	}
 
@@ -65,7 +65,7 @@ public class BFS {
 	 * Using Breadth First Search algoritm (BFS).
 	 */
 	public boolean existsPath (String src, String dest, int k) {
-		Pair<Boolean> res = runBFS(src, dest, k, false);
+		Pair<Boolean> res = runBFS(src, dest, k);
 		return (res.first && (res.second <= k));
 	}
 
@@ -76,8 +76,15 @@ public class BFS {
 	 * Using Breadth First Search algoritm (BFS).
 	 */
 	public boolean kHops (String src, String dest, int k) {
-		Pair<Boolean> res = runBFS(src, dest, k, true);
-		return (res.first && (res.second == k));
+		GraphIterator<String> khop = kHopsNeighborhood(src, k);
+		while (khop.hasNext()) {
+			if (dest.equals(khop.next())) {
+				khop.close();
+				return true;
+			}
+		}
+		khop.close();
+		return false;
 	}
 
 	/*
@@ -87,11 +94,11 @@ public class BFS {
 	 * 'false' if the opposite.
 	 * Using Breadth First Search algoritm (BFS).
 	 */
-	private Pair<Boolean> runBFS (String src, String dest, int k, boolean exactly) {
+	private Pair<Boolean> runBFS (String src, String dest, int k) {
 
 		Queue<Pair<String> > queue = new LinkedList<Pair<String> >();
 		visitedNodes = new HashSet<String>();
-		Iterator<String> adj;
+		GraphIterator<String> adj;
 		String next;
 		Pair<String> aux = new Pair<String>(src, 0);
 		queue.add(aux);
@@ -99,17 +106,19 @@ public class BFS {
 		while(!queue.isEmpty()) {
 			aux = queue.poll();
 			visitedNodes.add(aux.first);
-			if (aux.first.equals(dest) && (!exactly || aux.second==k)) {
-				return new Pair<Boolean>(true, aux.second);
-			}
 			if (aux.second < k) {
 				adj = this.graph.adj(aux.first);
 				while(adj.hasNext()) {
 					next = adj.next();
+					if (next.equals(dest)) {
+						adj.close();
+						return new Pair<Boolean>(true, aux.second+1);
+					}
 					if (!visitedNodes.contains(next)) {
 						queue.add(new Pair<String>(next, aux.second+1));
 					}
 				}
+				adj.close();
 			}
 		}
 		return new Pair<Boolean>(false, 0);
@@ -119,22 +128,23 @@ public class BFS {
 	 * nodes that belongs to the k-Hop set
 	 * of node 'src'.
 	 */
-	public Iterator<String> kHopsNeighborhood (String src, int k) {
+	public GraphIterator<String> kHopsNeighborhood (String src, int k) {
 
 		HashSet[] sets = new HashSet[2];
 		sets[0] = new HashSet<String>();
 		sets[1] = new HashSet<String>();
 		sets[0].add(src);
-		Iterator<String> hopN, adj;
+		GraphIterator<String> adj;
+		Iterator<String> hopN;
 		int i = 0, j = 1, ind = 0;
 
 		while (ind < k) {
-
 			hopN = sets[i].iterator();
 			while(hopN.hasNext()) {
 				adj = this.graph.adj(hopN.next());
 				while (adj.hasNext())
 					sets[j].add(adj.next());
+				adj.close();
 			}
 
 			sets[i].clear();
@@ -143,7 +153,6 @@ public class BFS {
 			j = (j==0 ? 1 : 0);
 			ind++;
 		}
-
-		return sets[i].iterator();
+		return new SimpleGraphIterator(sets[i]);
 	}
 }
