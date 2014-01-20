@@ -15,252 +15,97 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package ve.usb.gdbb;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.Iterator;
+import java.util.HashSet;
+import java.util.Stack;
 
-public class DensestSubgraph {
+public class DFS {
 
-	private ArrayList<Integer> inDegrees;
-	private ArrayList<Integer> outDegrees;
-	private ArrayList<String> indexToString;
-	private HashMap<String, Integer> stringToIndex;
-	private Boolean validIn[];
-	private Boolean validOut[];
-	private ArrayList<ArrayList<Integer>> predecessors;
-	private Integer addedVertexs;
+	private Graph graph;
+	private HashSet<String> visitedNodes;
 
-	/* Comparator used to sort nodes by in degree by increasing order
+	/*
+	 * Class used for DFS's result.
 	 */
-	private class CustomComparatorInDegree implements Comparator<Integer> {
-		public int compare(Integer o1, Integer o2) {
-			if (!validIn[o1].booleanValue() && validIn[o2].booleanValue()) {
-				return 1;
-			} else if (validIn[o1].booleanValue() && !validIn[o2].booleanValue()) {
-				return -1;
-			} else if (!validIn[o1].booleanValue() && !validIn[o2].booleanValue()) {
-				return 0;
-			}
-			return inDegrees.get(o1).compareTo(inDegrees.get(o2));
+	private static class Pair<T> {
+    	public T first;
+		public int second;
+		Pair(T newFirst, int newSecond) {
+			first = newFirst;
+			second = newSecond;
 		}
 	}
-
-	/* Comparator used to sort nodes by out degree by increasing order
+	
+	public DFS(Graph newGraph) {
+		graph = newGraph;
+	}
+	
+	/*
+	 * This function returns 'true' if dst is reachable from
+	 * scr (this happends if and only if, dst is reachable from
+	 * src in |E| or less arcs between them - given the graph
+	 * is G = (V,E) and E is the set of arcs). Returns 'false'
+	 * if not.
+	 * Using Depth First Search algoritm (DFS).
 	 */
-	private class CustomComparatorOutDegree implements Comparator<Integer> {
-		public int compare(Integer o1, Integer o2) {
-			if (!validOut[o1].booleanValue() && validOut[o2].booleanValue()) {
-				return 1;
-			} else if (validOut[o1].booleanValue() && !validOut[o2].booleanValue()) {
-				return -1;
-			} else if (!validOut[o1].booleanValue() && !validOut[o2].booleanValue()) {
-				return 0;
-			}
-			return outDegrees.get(o1).compareTo(outDegrees.get(o2));
-		}
+	public boolean existsPath(String src, String dest) {
+		visitedNodes = new HashSet<String>();
+		Pair<Boolean> res = runDFS(src, dest, graph.E(), false);
+		return res.first;
 	}
 
-	public DensestSubgraph(){
-	}
-
-	/* Procedure that updates the predecessors of all nodes
-	 * in the graph.
+	/*
+	 * This function returns 'true' if dst is reachable from
+	 * scr in k or less arcs between them. Returns 'false' if
+	 * the opposite.
+	 * Using Depth First Search algoritm (DFS).
 	 */
-	private void initializePredecessors(Graph g) {
-		GraphIterator<String> itNodes = g.getNodes();
-		this.addedVertexs = 0;
-		while (itNodes.hasNext()) {
-			addNode(itNodes.next());
-		}
-		itNodes.close();
-		GraphIterator<Edge> it = g.getEdges();
-		Edge curEdge;
-		while (it.hasNext()) {
-			curEdge = it.next();
-			predecessors.get(stringToIndex.get(curEdge.getDst()))
-				.add(stringToIndex.get(curEdge.getSrc()));
-		}
-		it.close();
+	public boolean existsPath(String src, String dest, int k) {
+		visitedNodes = new HashSet<String>();
+		Pair<Boolean> res = runDFS(src, dest, k, false);
+		return (res.first && (res.second <= k));
 	}
 
-	private void addNode(String nodeId) {
-		if (!stringToIndex.containsKey(nodeId)) {
-			stringToIndex.put(nodeId, addedVertexs);
-			indexToString.add(addedVertexs, nodeId);
-			predecessors.add(addedVertexs, new ArrayList<Integer>());
-			addedVertexs++;
-		}
-	}
-
-	/* Procedure that deletes all incoming edges from the node
-	 * with "nodeIndex" as index.
+	/*
+	 * This function returns 'true' if dst is reachable from
+	 * scr with exactly k arcs between them. Returns 'false' if
+	 * the opposite.
+	 * Using Depth First Search algoritm (DFS).
 	 */
-	protected void deleteIncoming(int nodeIndex) {
-		ArrayList<Integer> pred = predecessors.get(nodeIndex);
-		int size = pred.size(), predIndx;
-		for (int i = 0; i < size; i++) {
-			predIndx = pred.get(i);
-			if (validOut[predIndx]) {
-				outDegrees.set(predIndx, outDegrees.get(predIndx) - 1);
-			}
-		}
-		validIn[nodeIndex] = false;
+	public boolean kHops (String src, String dest, int k) {
+		visitedNodes = new HashSet<String>();
+		Pair<Boolean> res = runDFS(src, dest, k, true);
+		return (res.first && (res.second == k));
 	}
 
-	/* Procedure that deletes all outgoing edges from the node
-	 * with "nodeIndex" as index.
+	/*
+	 * This function returns 'true' if node dst is
+	 * reachable from node src with k or less arcs
+	 * between them in the graph stored. Returns
+	 * 'false' if the opposite.
+	 * Using Depth First Search algoritm (DFS).
 	 */
-	protected void deleteOutgoing(int nodeIndex, Graph g) {
-		GraphIterator<String> it = g.adj(indexToString.get(nodeIndex));
-		int succIndx;
-		while (it.hasNext()) {
-			succIndx = stringToIndex.get(it.next());
-			if (validIn[succIndx]) {
-				inDegrees.set(succIndx, inDegrees.get(succIndx) - 1);
+	private Pair<Boolean> runDFS(String src, String dest, int k, boolean exactly) {
+		if (k < 0)
+			return new Pair<Boolean>(false, 0);
+		visitedNodes.add(src);
+		if (src.equals(dest) && (!exactly || k==0))
+			return new Pair<Boolean>(true, k);
+		GraphIterator<String> adj = graph.adj(src);
+		Pair<Boolean> res = new Pair<Boolean>(false, 0);
+		String next;
+		while (!res.first && adj.hasNext()) {
+			next = adj.next();
+			if (!visitedNodes.contains(next)) {
+				res = runDFS(next, dest, k-1, exactly);	
+				res.second++;
 			}
 		}
-		it.close();
-		validOut[nodeIndex] = false;
-	}
-
-	/* Function used to calculate the current density of the graph
-	 */
-	private double calculateDensity(Graph g) {
-		int EdgesST = 0;
-		ArrayList<Integer> S = new ArrayList<Integer>();
-		ArrayList<Integer> T = new ArrayList<Integer>();
-		GraphIterator<String> it;
-		int sizeIn = inDegrees.size();
-		int sizeOut = outDegrees.size();
-
-		for ( int i = 0; i < sizeIn; i++ ) {
-			if (validIn[i]) {
-				if (inDegrees.get(i) > 0) {
-					T.add(i);
-				}
-			}
-		}
-
-		for ( int j = 0; j < sizeOut; j++ ) {
-			if (validOut[j]) {
-				if (outDegrees.get(j) > 0) {
-					S.add(j);
-				}
-			}
-		}
-
-		int sizeS = S.size(), curr, indexCurr;
-
-		for (int i = 0; i < sizeS; i++) {
-			curr = S.get(i);
-			it = g.adj(indexToString.get(curr));
-			while (it.hasNext()) {
-				indexCurr = stringToIndex.get(it.next());
-				if(validIn[indexCurr]){
-					EdgesST++;
-				}
-			}
-			it.close();
-		}
-
-		int sizeT = T.size();
-
-		return sizeS*sizeT != 0 ? (EdgesST/Math.sqrt(sizeS*sizeT)) : 0.0;
-	}
-
-	public Graph DenseSubgraph(Graph g) {
-		ArrayList<Integer> indexIn = new ArrayList<Integer>();
-		ArrayList<Integer> indexOut = new ArrayList<Integer>();
-		GraphIterator<String> it = g.getNodes();
-		int i, j, vertexs, vertexsAll = g.V();
-		double density, tmp;
-		String cur;
-		Boolean densestValidIn[] = new Boolean[vertexsAll];
-		Boolean densestValidOut[] = new Boolean[vertexsAll];
-
-		this.indexToString = new ArrayList<String>();
-		this.stringToIndex = new HashMap<String, Integer>();
-		this.inDegrees = new ArrayList<Integer>();
-		this.outDegrees = new ArrayList<Integer>();
-		this.validIn = new Boolean[vertexsAll];
-		this.validOut = new Boolean[vertexsAll];
-		this.predecessors = new ArrayList<ArrayList<Integer>>();
-		initializePredecessors(g);
-
-		i = 0;
-		while (it.hasNext()) {
-			cur = it.next();
-			inDegrees.add(g.getInDegree(cur));
-			outDegrees.add(g.getOutDegree(cur));
-			indexIn.add(i);
-			indexOut.add(i);
-			i++;
-		}
-		it.close();
-
-		for (int k = 0; k < vertexsAll; k++) {
-			validIn[k] = true;
-			validOut[k] = true;
-			densestValidIn[k] = true;
-			densestValidOut[k] = true;
-		}
-
-		Collections.sort(indexIn, new CustomComparatorInDegree());
-		Collections.sort(indexOut, new CustomComparatorOutDegree());
-
-		density = calculateDensity(g);
-
-		i = 0;
-		j = 0;
-		vertexs = 2*vertexsAll;
-		while ( vertexs > 0 ) {	
-			if (i < vertexsAll && j < vertexsAll) {
-				if (inDegrees.get(indexIn.get(0)) <= outDegrees.get(indexOut.get(0)) ) {
-					deleteIncoming(indexIn.get(0));
-					i++;
-				} else {
-					deleteOutgoing(indexOut.get(0), g);
-					j++;
-				}
-			} else if (i < vertexsAll && j == vertexsAll) {
-				deleteIncoming(indexIn.get(0));
-				i++;
-			} else if (i == vertexsAll && j < vertexsAll) {
-				deleteOutgoing(indexOut.get(0), g);
-				j++;
-			}
-
-			tmp = calculateDensity(g);
-
-			if (density < tmp) {
-				density = tmp;
-				for (int k = 0; k < vertexsAll; k++) {
-					densestValidIn[k] = this.validIn[k];
-					densestValidOut[k] = this.validOut[k];
-				}
-			}
-			Collections.sort(indexIn, new CustomComparatorInDegree());
-			Collections.sort(indexOut, new CustomComparatorOutDegree());
-			vertexs--;
-		}
-
-		Graph densestGraph = new DiGraphAdjList();
-		GraphIterator<Edge> itEdges = g.getEdges();
-		Edge curEdge;
-		int srcIndx, dstIndx;
-
-		while (itEdges.hasNext()) {
-			curEdge = itEdges.next();
-			srcIndx = stringToIndex.get(curEdge.getSrc());
-			dstIndx = stringToIndex.get(curEdge.getDst());
-			if (densestValidOut[srcIndx] && densestValidIn[dstIndx]) {
-				densestGraph.addNode(curEdge.getSrc());
-				densestGraph.addNode(curEdge.getDst());
-				densestGraph.addEdge(curEdge);
-			}
-		}
-		itEdges.close();
-
-		return densestGraph;
+		adj.close();
+		return res;
 	}
 }
