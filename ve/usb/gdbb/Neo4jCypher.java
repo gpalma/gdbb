@@ -57,69 +57,66 @@ public class Neo4jCypher extends Neo4j {
 	 * Returns an iterator over all
 	 * nodes adjacents to 'nodeId'.
 	 */
-	public Iterator<String> adj(String nodeId) {
+	public GraphIterator<String> adj(String nodeId) {
 		Node node = nodesIdIndex.get(idNode, nodeId).getSingle();
+		ArrayList<String> adjNodeList = new ArrayList<String>();
+		if (node == null)
+			return new SimpleGraphIterator(adjNodeList);
 		String QueryPM =
 			"START n=node(" + 
 			node.getId() + ") " +
 			"MATCH n-[]->m RETURN m.idNode";
-
 		ExecutionResult result = query(QueryPM);
-
-		ArrayList<String> adjNodeList = new ArrayList<String>();
-
 		for ( Map<String, Object> row : result ){
 			for ( Map.Entry<String, Object> column : row.entrySet() ){
 				adjNodeList.add(column.getValue().toString());
 			}
 		}
-		return adjNodeList.iterator();
+		return new SimpleGraphIterator(adjNodeList);
 	}
 
 	/*
 	 * Returns an iterator over all
 	 * nodes adjacents to 'nodeId'.
 	 */
-	public Iterator<String> adj(String nodeId, String relId) {
+	public GraphIterator<String> adj(String nodeId, String relId) {
 		Node node = nodesIdIndex.get(idNode, nodeId).getSingle();
+		ArrayList<String> adjNodeList = new ArrayList<String>();
+		if (node == null)
+			return new SimpleGraphIterator(adjNodeList);
 		String QueryPM =
 			"START n=node(" + node.getId() + ") " +
 			"MATCH n-[:" + relId + "]->m RETURN m.idNode";
-
 		ExecutionResult result = query(QueryPM);
-
-		ArrayList<String> adjNodeList = new ArrayList<String>();
-
 		for ( Map<String, Object> row : result ){
 			for ( Map.Entry<String, Object> column : row.entrySet() ){
 				adjNodeList.add(column.getValue().toString());
 			}
 		}
-		return adjNodeList.iterator();
+		return new SimpleGraphIterator(adjNodeList);
 	}
 
 	/*
 	 * Returns an iterator over all
 	 * nodes adjacents to 'nodeId'.
 	 */
-	public Iterator<String> edgeBetween(String srcId, String dstId) {
+	public GraphIterator<String> edgeBetween(String srcId, String dstId) {
 		Node nodeS = nodesIdIndex.get(idNode, srcId).getSingle(),
 			 nodeD = nodesIdIndex.get(idNode, dstId).getSingle();
+		ArrayList<String> edgeList = new ArrayList<String>();
+		if (nodeS == null || nodeD == null)
+			return new SimpleGraphIterator(edgeList);
 		String QueryPM =
 			"START n=node(" + nodeS.getId() + ")" +
 			", m=node(" + nodeD.getId() + ") " +
 			"MATCH n-[r]->m RETURN type(r)";
-
 		ExecutionResult result = query(QueryPM);
-
-		ArrayList<String> edgeList = new ArrayList<String>();
-
 		for ( Map<String, Object> row : result ){
 			for ( Map.Entry<String, Object> column : row.entrySet() ){
 				edgeList.add(column.getValue().toString());
 			}
 		}
-		return edgeList.iterator();
+		return new SimpleGraphIterator(edgeList);
 	}
 
 	/*
@@ -127,17 +124,13 @@ public class Neo4jCypher extends Neo4j {
 	 * 'nodeId'. NULL otherwise.
 	 */
 	public Integer getInDegree(String nodeId) {
-
 		Node node = nodesIdIndex.get(idNode, nodeId).getSingle();
 		if (node == null)
 			return null;
-
 		String QueryPM =
 			"START n=node(" + node.getId() + ") " +
 			"MATCH n<-[]-m RETURN count(m)";
-
 		ExecutionResult result = query(QueryPM);
-
 		for ( Map<String, Object> row : result ){
 			for ( Map.Entry<String, Object> column : row.entrySet() ){
 				return (Integer.parseInt(column.getValue().toString()));
@@ -151,17 +144,13 @@ public class Neo4jCypher extends Neo4j {
 	 * 'nodeId'. NULL otherwise.
 	 */
 	public Integer getOutDegree (String nodeId) {
-
 		Node node = nodesIdIndex.get(idNode, nodeId).getSingle();
 		if (node == null)
 			return null;
-
 		String QueryPM =
 			"START n=node(" + node.getId() + ") " +
 			"MATCH n-[]->m RETURN count(m)";
-
 		ExecutionResult result = query(QueryPM);
-
 		for ( Map<String, Object> row : result ){
 			for ( Map.Entry<String, Object> column : row.entrySet() ){
 				return (Integer.parseInt(column.getValue().toString()));
@@ -175,20 +164,16 @@ public class Neo4jCypher extends Neo4j {
 			 nodeD = nodesIdIndex.get(idNode, dst).getSingle();
 		if (nodeS == null || nodeD == null)
 			return false;
-		
 		String QueryPM =
 			"START n=node(" + nodeS.getId() + ") " +
 			", m=node(" + nodeD.getId() + ") " +
 			"MATCH p=n-[*]->m RETURN p LIMIT 1";
-
 		ExecutionResult result = query(QueryPM);
-
 		for ( Map<String, Object> row : result ){
 			for ( Map.Entry<String, Object> column : row.entrySet() ){
 				return true;
 			}
 		}
-
 		return false;
 	}
 	
@@ -196,25 +181,20 @@ public class Neo4jCypher extends Neo4j {
 		return dfs(src,dst);
 	}
 	
-	public Iterator<String> kHops(String src, int k) {
-
+	public GraphIterator<String> kHops(String src, int k) {
 		ArrayList<String> nodeList = new ArrayList<String>();
 		Node nodeS = nodesIdIndex.get(idNode, src).getSingle();
 		if (nodeS == null)
-			return nodeList.iterator();
-		
+			return new SimpleGraphIterator(nodeList);
 		String QueryPM =
 			"START n=node(" + nodeS.getId() + ") " +
 			"MATCH n-[*" + k + "]->m RETURN DISTINCT m.idNode";
-
 		ExecutionResult result = query(QueryPM);
-
 		for ( Map<String, Object> row : result ){
 			for ( Map.Entry<String, Object> column : row.entrySet() ){
 				nodeList.add(column.getValue().toString());
 			}
 		}
-
-		return nodeList.iterator();
+		return new SimpleGraphIterator(nodeList);
 	}
 }
